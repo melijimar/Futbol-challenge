@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Fútbol Challenge</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07130b;font-family:Arial,sans-serif;touch-action:none}
+#game{position:relative;width:100vw;height:100vh;overflow:hidden;background:#163d20}
+canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:14px;align-items:center;background:rgba(0,0,0,.68);color:white;padding:8px 16px;border-radius:18px;font-weight:bold;font-size:clamp(14px,3vw,22px);z-index:3;white-space:nowrap}
+#hud .score{font-size:1.25em}
+#start,#end{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:10}
+.panel{width:min(90vw,420px);text-align:center;color:white;background:linear-gradient(145deg,#0b5b2a,#092d18);border:2px solid rgba(255,255,255,.25);border-radius:24px;padding:28px 22px;box-shadow:0 15px 50px rgba(0,0,0,.5)}
+h1{font-size:clamp(30px,9vw,54px);margin:0 0 10px;text-shadow:0 4px 0 #063516}
+.panel p{font-size:16px;line-height:1.45;opacity:.9}
+button{border:0;border-radius:14px;padding:14px 25px;font-size:18px;font-weight:bold;color:white;background:#f39c12;box-shadow:0 5px 0 #9b5d06;cursor:pointer}
+button:active{transform:translateY(3px);box-shadow:0 2px 0 #9b5d06}
+#end{display:none}
+#controls{position:absolute;inset:0;z-index:5;pointer-events:none}
+#joyBase{position:absolute;left:22px;bottom:24px;width:128px;height:128px;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.3);pointer-events:auto}
+#joyKnob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px;border-radius:50%;background:rgba(255,255,255,.65);box-shadow:0 3px 10px #0008}
+.actions{position:absolute;right:22px;bottom:25px;display:flex;gap:12px;pointer-events:auto}
+.action{width:82px;height:82px;border-radius:50%;padding:0;font-size:14px;border:2px solid rgba(255,255,255,.4)}
+#shoot{background:#e74c3c;box-shadow:0 5px 0 #8d261c}
+#pass{background:#3498db;box-shadow:0 5px 0 #1d5a80}
+#msg{position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:4;color:#fff;font-weight:900;font-size:clamp(28px,8vw,60px);text-shadow:0 4px 8px #000;opacity:0;pointer-events:none}
+@media (orientation:portrait){#game:after{content:"Gira tu celular ↻";position:absolute;inset:0;z-index:20;background:#07130b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:bold;text-align:center}}
+@media (min-width:700px){#joyBase{left:35px;bottom:30px}.actions{right:35px;bottom:30px}}
+</style>
+</head>
+<body>
+<div id="game">
+<canvas id="canvas"></canvas>
+<div id="hud"><span>⚽ FÚTBOL CHALLENGE</span><span class="score"><b id="home">0</b> - <b id="away">0</b></span><span>⏱️ <b id="time">90</b></span></div>
+<div id="msg"></div>
+
+<div id="controls">
+  <div id="joyBase"><div id="joyKnob"></div></div>
+  <div class="actions">
+    <button class="action" id="pass">PASE</button>
+    <button class="action" id="shoot">DISPARO</button>
+  </div>
+</div>
+
+<div id="start"><div class="panel">
+<h1>⚽ FÚTBOL<br>CHALLENGE</h1>
+<p>¡Marca más goles que el rival antes de que termine el partido!</p>
+<p>🎮 Mueve al jugador con el joystick.<br>🔵 PASE &nbsp; 🔴 DISPARO</p>
+<button id="startBtn">JUGAR</button>
+</div></div>
+
+<div id="end"><div class="panel">
+<h1 id="result">¡PARTIDO TERMINADO!</h1>
+<p id="finalScore"></p>
+<button id="again">JUGAR DE NUEVO</button>
+</div></div>
+</div>
+
+<script>
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+const homeEl=document.getElementById('home'),awayEl=document.getElementById('away'),timeEl=document.getElementById('time');
+const start=document.getElementById('start'),end=document.getElementById('end'),result=document.getElementById('result'),finalScore=document.getElementById('finalScore'),msg=document.getElementById('msg');
+let W,H,scale=1,field={x:0,y:0,w:0,h:0};
+let running=false,scoreH=0,scoreA=0,timeLeft=90,last=0,raf;
+let joy={x:0,y:0,active:false,id:null},keys={};
+let player,ball,opponents,keeper,particles=[];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function resize(){
+ W=canvas.width=innerWidth*devicePixelRatio; H=canvas.height=innerHeight*devicePixelRatio;
+ canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';
+ ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+ W=innerWidth;H=innerHeight;
+ field={x:W*.06,y:H*.10,w:W*.88,h:H*.80};
+}
+addEventListener('resize',resize);resize();
+
+function reset(){
+ scoreH=scoreA=0;timeLeft=90;homeEl.textContent=0;awayEl.textContent=0;timeEl.textContent=90;
+ const cy=field.y+field.h/2;
+ player={x:field.x+field.w*.25,y:cy,r:18,vx:0,vy:0,has:false};
+ ball={x:player.x+22,y:player.y,r:9,vx:0,vy:0,owner:null};
+ opponents=[
+ {x:field.x+field.w*.55,y:cy-100,r:17,s:80},
+ {x:field.x+field.w*.65,y:cy+100,r:17,s:72},
+ {x:field.x+field.w*.72,y:cy,r:17,s:85}
+ ];
+ keeper={x:field.x+field.w*.91,y:cy,r:20};
+ particles=[];msg.style.opacity=0;
+}
+function startGame(){reset();start.style.display='none';end.style.display='none';running=true;last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
+function finish(){
+ running=false;end.style.display='flex';
+ result.textContent=scoreH>scoreA?'🏆 ¡VICTORIA!':scoreH<scoreA?'😢 ¡DERROTA!':'🤝 ¡EMPATE!';
+ finalScore.textContent=`Resultado final: ${scoreH} - ${scoreA}`;
+}
+document.getElementById('startBtn').onclick=startGame;
+document.getElementById('again').onclick=startGame;
+
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key===' '){e.preventDefault();shoot()}});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+
+const base=document.getElementById('joyBase'),knob=document.getElementById('joyKnob');
+function joyMove(e){
+ const r=base.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+ let dx=e.clientX-cx,dy=e.clientY-cy,d=Math.hypot(dx,dy),max=r.width*.34;
+ if(d>max){dx*=max/d;dy*=max/d}
+ joy.x=dx/max;joy.y=dy/max;
+ knob.style.transform=`translate(${dx}px,${dy}px)`;
+}
+base.addEventListener('pointerdown',e=>{joy.active=true;joy.id=e.pointerId;base.setPointerCapture(e.pointerId);joyMove(e)});
+base.addEventListener('pointermove',e=>{if(joy.active&&e.pointerId===joy.id)joyMove(e)});
+function joyUp(){joy.active=false;joy.x=joy.y=0;knob.style.transform='translate(0,0)'}
+base.addEventListener('pointerup',joyUp);base.addEventListener('pointercancel',joyUp);
+document.getElementById('shoot').addEventListener('pointerdown',e=>{e.preventDefault();shoot()});
+document.getElementById('pass').addEventListener('pointerdown',e=>{e.preventDefault();passBall()});
+
+function shoot(){
+ if(!running)return;
+ const dx=field.x+field.w-player.x, dy=(field.y+field.h/2)-player.y;
+ if(Math.hypot(dx,dy)<field.w*.75 && (ball.owner==='player'||Math.hypot(ball.x-player.x,ball.y-player.y)<42)){
+   ball.owner=null;player.has=false;
+   const len=Math.hypot(dx,dy)||1;ball.x=player.x;ball.y=player.y;
+   ball.vx=dx/len*520;ball.vy=dy/len*520;
+ }
+}
+function passBall(){
+ if(!running)return;
+ if(ball.owner==='player'||Math.hypot(ball.x-player.x,ball.y-player.y)<42){
+   ball.owner=null;player.has=false;
+   ball.x=player.x;ball.y=player.y;
+   ball.vx=220;ball.vy=(field.y+field.h/2-player.y)*1.3;
+ }
+}
+function scoreGoal(team){
+ if(team==='home')scoreH++;else scoreA++;
+ homeEl.textContent=scoreH;awayEl.textContent=scoreA;
+ msg.textContent=team==='home'?'⚽ ¡GOOOOL!':'😱 ¡GOL DEL RIVAL!';
+ msg.style.opacity=1;setTimeout(()=>msg.style.opacity=0,900);
+ resetPositions();
+}
+function resetPositions(){
+ const cy=field.y+field.h/2;
+ player.x=field.x+field.w*.25;player.y=cy;player.has=false;
+ ball.x=player.x+25;ball.y=cy;ball.vx=ball.vy=0;ball.owner=null;
+ opponents[0].x=field.x+field.w*.55;opponents[0].y=cy-100;
+ opponents[1].x=field.x+field.w*.65;opponents[1].y=cy+100;
+ opponents[2].x=field.x+field.w*.72;opponents[2].y=cy;
+ keeper.y=cy;
+}
+function update(dt){
+ let ax=joy.x,ay=joy.y;
+ if(keys['arrowleft']||keys['a'])ax=-1;if(keys['arrowright']||keys['d'])ax=1;
+ if(keys['arrowup']||keys['w'])ay=-1;if(keys['arrowdown']||keys['s'])ay=1;
+ const mag=Math.hypot(ax,ay);if(mag>1){ax/=mag;ay/=mag}
+ const speed=230;
+ player.x=clamp(player.x+ax*speed*dt,field.x+22,field.x+field.w-22);
+ player.y=clamp(player.y+ay*speed*dt,field.y+22,field.y+field.h-22);
+ if(ball.owner==='player'){ball.x=player.x+24;ball.y=player.y}
+ else{
+   ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;ball.vx*=Math.pow(.02,dt);ball.vy*=Math.pow(.02,dt);
+   if(ball.y<field.y+10||ball.y>field.y+field.h-10)ball.vy*=-.65;
+   if(ball.x<field.x+10)ball.vx*=-.65;
+ }
+ if(!ball.owner && Math.hypot(ball.x-player.x,ball.y-player.y)<30){ball.owner='player';player.has=true;ball.vx=ball.vy=0}
+ // Rivals chase the ball and can steal it
+ opponents.forEach((o,i)=>{
+   let tx=ball.x,ty=ball.y;
+   if(ball.owner==='player' && i===0){tx=player.x;ty=player.y}
+   let dx=tx-o.x,dy=ty-o.y,d=Math.hypot(dx,dy)||1;
+   o.x=clamp(o.x+dx/d*o.s*dt,field.x+field.w*.40,field.x+field.w-35);
+   o.y=clamp(o.y+dy/d*o.s*dt,field.y+25,field.y+field.h-25);
+   if(ball.owner==='player'&&Math.hypot(o.x-player.x,o.y-player.y)<30){
+     ball.owner='rival';player.has=false;ball.x=o.x-20;ball.y=o.y;
+   }
+ });
+ if(ball.owner==='rival'){
+   const o=opponents[0];ball.x=o.x-20;ball.y=o.y;
+   if(o.x<field.x+field.w*.48){ball.owner=null;ball.vx=-300;ball.vy=(field.y+field.h/2-o.y)*1.2}
+   else if(Math.random()<dt*.7){ball.owner=null;ball.vx=-360;ball.vy=(field.y+field.h/2-o.y)*1.2}
+ }
+ // Keeper follows ball vertically
+ keeper.y+=clamp(ball.y-keeper.y,-150*dt,150*dt);
+ keeper.y=clamp(keeper.y,field.y+55,field.y+field.h-55);
+ if(ball.x>field.x+field.w-30 && Math.abs(ball.y-(field.y+field.h/2))<field.h*.22){scoreGoal('home');return}
+ if(ball.x<field.x+30 && Math.abs(ball.y-(field.y+field.h/2))<field.h*.22){scoreGoal('away');return}
+ // Keeper saves
+ if(ball.vx>0 && Math.hypot(ball.x-keeper.x,ball.y-keeper.y)<30){ball.vx=-Math.abs(ball.vx)*.75;ball.vy+=(ball.y-keeper.y)*3}
+ timeLeft-=dt;timeEl.textContent=Math.max(0,Math.ceil(timeLeft));
+ if(timeLeft<=0)finish();
+}
+function circle(x,y,r,fill,stroke){
+ ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();
+ if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke()}
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ // grass
+ ctx.fillStyle='#155d2b';ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='#247b39';ctx.fillRect(field.x,field.y,field.w,field.h);
+ for(let i=0;i<10;i++){ctx.fillStyle=i%2?'rgba(255,255,255,.025)':'rgba(0,0,0,.025)';ctx.fillRect(field.x+i*field.w/10,field.y,field.w/10,field.h)}
+ // field lines
+ ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=3;ctx.strokeRect(field.x,field.y,field.w,field.h);
+ ctx.beginPath();ctx.moveTo(field.x+field.w/2,field.y);ctx.lineTo(field.x+field.w/2,field.y+field.h);ctx.stroke();
+ ctx.beginPath();ctx.arc(field.x+field.w/2,field.y+field.h/2,field.h*.13,0,Math.PI*2);ctx.stroke();
+ const cy=field.y+field.h/2, boxH=field.h*.42,boxW=field.w*.14;
+ ctx.strokeRect(field.x,cy-boxH/2,boxW,boxH);ctx.strokeRect(field.x+field.w-boxW,cy-boxH/2,boxW,boxH);
+ ctx.strokeRect(field.x,cy-boxH*.25,boxW*.42,boxH*.5);ctx.strokeRect(field.x+field.w-boxW*.42,cy-boxH*.25,boxW*.42,boxH*.5);
+ // goals
+ ctx.fillStyle='#eee';ctx.fillRect(field.x-12,cy-field.h*.12,12,field.h*.24);ctx.fillRect(field.x+field.w,cy-field.h*.12,12,field.h*.24);
+ // players
+ circle(player.x,player.y,player.r,'#e74c3c','#fff');circle(player.x,player.y-4,7,'#f5d6b3');ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('10',player.x,player.y+4);
+ opponents.forEach(o=>{circle(o.x,o.y,o.r,'#2980db','#fff');circle(o.x,o.y-4,7,'#f5d6b3')});
+ circle(keeper.x,keeper.y,keeper.r,'#f1c40f','#fff');circle(keeper.x,keeper.y-4,7,'#f5d6b3');
+ circle(ball.x,ball.y,ball.r,'#fff','#222');ctx.strokeStyle='#222';ctx.lineWidth=1;ctx.beginPath();ctx.arc(ball.x,ball.y,3,0,Math.PI*2);ctx.stroke();
+}
+function loop(now){
+ if(!running)return;let dt=Math.min((now-last)/1000,.035);last=now;update(dt);draw();raf=requestAnimationFrame(loop)
+}
+reset();draw();
+</script>
+</body>
+</html>
