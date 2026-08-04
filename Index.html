@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>⚽ Fútbol Challenge</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:none}
 html,body{width:100%;height:100%;overflow:hidden;background:#07220f;
  font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
 #wrap{position:fixed;inset:0}
-canvas{display:block;width:100%;height:100%}
+canvas{display:block;width:100%;height:100%;touch-action:none}
 
 /* ---------- HUD ---------- */
 #hud{position:absolute;top:calc(8px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
  display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;z-index:5}
 #score{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.15);border-radius:14px;
- padding:6px 18px;font-weight:800;font-size:22px;color:#fff;display:flex;align-items:center;gap:10px;backdrop-filter:blur(4px)}
+ padding:6px 18px;font-weight:800;font-size:22px;color:#fff;display:flex;align-items:center;gap:10px}
 #score .b{color:#6eb2ff}#score .r{color:#ff8a80}
 #time{background:rgba(0,0,0,.45);border-radius:10px;padding:2px 12px;font-size:14px;font-weight:700;color:#ffe9a8}
 
@@ -26,8 +26,8 @@ canvas{display:block;width:100%;height:100%}
  align-items:center;justify-content:center;box-shadow:0 6px 0 rgba(0,0,0,.35),inset 0 2px 6px rgba(255,255,255,.25);
  transition:transform .06s,filter .06s;touch-action:none;z-index:6}
 .btn small{font-size:10px;font-weight:700;opacity:.9}
-#btnShoot{width:92px;height:92px;font-size:14px;right:0;bottom:0;background:radial-gradient(circle at 30% 25%,#ff8a80,#e53935)}
-#btnPass{width:72px;height:72px;font-size:12px;right:92px;bottom:64px;background:radial-gradient(circle at 30% 25%,#82b1ff,#1e88e5)}
+#btnShoot{width:96px;height:96px;font-size:14px;right:0;bottom:0;background:radial-gradient(circle at 30% 25%,#ff8a80,#e53935)}
+#btnPass{width:76px;height:76px;font-size:12px;right:96px;bottom:66px;background:radial-gradient(circle at 30% 25%,#82b1ff,#1e88e5)}
 .btn.pressed{transform:scale(.9);filter:brightness(1.3)}
 
 /* ---------- Joystick ---------- */
@@ -38,11 +38,11 @@ canvas{display:block;width:100%;height:100%}
 #joyHint{position:absolute;left:calc(22px + env(safe-area-inset-left));bottom:calc(28px + env(safe-area-inset-bottom));
  width:110px;height:110px;border-radius:50%;border:2px dashed rgba(255,255,255,.28);display:flex;flex-direction:column;
  align-items:center;justify-content:center;gap:4px;color:rgba(255,255,255,.55);z-index:4;pointer-events:none}
-#joyHint span{font-size:30px}#joyHint small{font-size:9px;letter-spacing:1px}
+#joyHint span{font-size:30px}#joyHint small{font-size:9px;letter-spacing:1px;text-align:center}
 
 /* ---------- Overlays ---------- */
 .overlay{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
- background:rgba(3,20,10,.85);backdrop-filter:blur(6px);color:#fff;text-align:center;padding:20px}
+ background:rgba(3,20,10,.85);color:#fff;text-align:center;padding:20px}
 .overlay h1{font-size:clamp(30px,8vw,56px);line-height:1.05;text-shadow:0 4px 0 rgba(0,0,0,.35)}
 .sub{margin-top:12px;font-size:clamp(14px,3.6vw,18px);color:#d9f5e3;max-width:520px}
 .howto{margin-top:20px;display:flex;flex-direction:column;gap:10px;font-size:clamp(12px,3.2vw,15px);color:#eafff0;
@@ -65,7 +65,7 @@ canvas{display:block;width:100%;height:100%}
     <div id="time">⏱️ 90</div>
   </div>
 
-  <div id="joyHint"><span>🕹️</span><small>MUÉVETE</small></div>
+  <div id="joyHint"><span>🕹️</span><small>TOCA Y ARRASTRA<br>EN CUALQUIER PARTE</small></div>
   <div id="joyBase"><div id="joyKnob"></div></div>
 
   <div id="actions">
@@ -77,9 +77,10 @@ canvas{display:block;width:100%;height:100%}
     <h1>⚽ FÚTBOL<br>CHALLENGE</h1>
     <p class="sub">¡Marca más goles que el rival antes de que termine el partido!</p>
     <div class="howto">
-      <div>🕹️ <b>Mover:</b> toca y arrastra en la mitad izquierda (el joystick aparece donde toques)</div>
+      <div>🕹️ <b>Mover:</b> toca y arrastra en cualquier parte de la pantalla (el joystick aparece donde toques)</div>
       <div><span class="chip blue">PASE</span> Pasa a tu compañero · si él tiene el balón, pídelo</div>
       <div><span class="chip red">DISPARO</span> Tira al arco · apunta con el joystick</div>
+      <div>🟡 Sigue la flecha amarilla: ese eres tú. Atacas hacia el arco rival.</div>
     </div>
     <button class="bigBtn" id="btnPlay">JUGAR</button>
   </div>
@@ -93,20 +94,20 @@ canvas{display:block;width:100%;height:100%}
 </div>
 
 <script>
-(() => {
+(function(){
 'use strict';
 
-/* ============ CANVAS Y VISTA (con giro automático en vertical) ============ */
-const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-const W = 900, H = 560;
-const F = { x:40, y:40, w:W-80, h:H-80 };
-const GOAL = { y1:H/2-70, y2:H/2+70, depth:26 };
-const view = { s:1, offX:0, offY:0, cw:0, ch:0, dpr:1, portrait:false };
+/* ============ CANVAS Y VISTA ============ */
+var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+var W = 900, H = 560;
+var F = { x:40, y:40, w:W-80, h:H-80 };
+var GOAL = { y1:H/2-70, y2:H/2+70, depth:26 };
+var view = { s:1, offX:0, offY:0, cw:0, ch:0, dpr:1, portrait:false };
 
 function resize(){
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
   view.dpr = dpr;
-  const cw = window.innerWidth, ch = window.innerHeight;
+  var cw = window.innerWidth, ch = window.innerHeight;
   cv.width = Math.round(cw*dpr); cv.height = Math.round(ch*dpr);
   view.cw = cw; view.ch = ch; view.portrait = ch > cw;
   if (view.portrait){
@@ -120,49 +121,55 @@ function resize(){
 window.addEventListener('resize', resize); resize();
 
 function setWorldTransform(){
-  const s = view.s;
+  var s = view.s;
   if (view.portrait) ctx.setTransform(0,-s,s,0, view.offX, view.offY + W*s);
   else               ctx.setTransform(s,0,0,s, view.offX, view.offY);
 }
+function worldToScreen(wx, wy){
+  if (view.portrait) return { x:(view.offX + wy*view.s)/view.dpr, y:(view.offY + (W-wx)*view.s)/view.dpr };
+  return { x:(view.offX + wx*view.s)/view.dpr, y:(view.offY + wy*view.s)/view.dpr };
+}
 
 /* ============ UTILIDADES ============ */
-const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-const dist  = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
-const vib   = p => { try { navigator.vibrate && navigator.vibrate(p); } catch(e){} };
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+function vib(p){ try { if (navigator.vibrate) navigator.vibrate(p); } catch(e){} }
 
 /* ============ SONIDO ============ */
-let AC = null;
+var AC = null;
 function ensureAudio(){
   try{
     if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-    if (AC.state === 'suspended') AC.resume();
+    if (AC && AC.state === 'suspended') AC.resume();
   }catch(e){}
 }
-function tone(f,d,type='square',v=0.12,delay=0){
+function tone(f,d,type,v,delay){
   if(!AC) return;
   try{
-    const t = AC.currentTime + delay;
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.type = type; o.frequency.value = f;
-    g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(0.001, t+d);
+    var t = AC.currentTime + (delay||0);
+    var o = AC.createOscillator(), g = AC.createGain();
+    o.type = type||'square'; o.frequency.value = f;
+    g.gain.setValueAtTime(v||0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+d);
     o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+d);
   }catch(e){}
 }
-const sKick    = () => tone(150,.07,'triangle',.22);
-const sTrap    = () => tone(260,.05,'triangle',.10);
-const sShoot   = () => tone(110,.12,'square',.20);
-const sWhistle = () => { tone(1250,.14,'square',.07); tone(1250,.30,'square',.07,.20); };
-const sGoal    = () => [523,659,784,1046].forEach((f,i)=>tone(f,.16,'square',.12,i*.12));
+function sKick(){ tone(150,.07,'triangle',.22); }
+function sTrap(){ tone(260,.05,'triangle',.10); }
+function sShoot(){ tone(110,.12,'square',.20); }
+function sWhistle(){ tone(1250,.14,'square',.07); tone(1250,.30,'square',.07,.20); }
+function sGoal(){ var ns=[523,659,784,1046]; for(var i=0;i<4;i++) tone(ns[i],.16,'square',.12,i*.12); }
 
 /* ============ ESTADO ============ */
-let state = 'menu';            // menu | playing | goal | ended
-let scoreB = 0, scoreR = 0, timeLeft = 90, msg = '', msgT = 0;
-const P_R = 15;
+var state = 'menu';
+var scoreB = 0, scoreR = 0, timeLeft = 90, msg = '', msgT = 0;
+var P_R = 15;
 
 function mkEnt(x,y,team,speed){
-  return { x, y, vx:0, vy:0, r:P_R, team, speed, dir:{x:team===0?1:-1,y:0}, cd:0, decT:0 };
+  return { x:x, y:y, vx:0, vy:0, r:P_R, team:team, speed:speed,
+           dir:{x:team===0?1:-1, y:0}, cd:0, decT:0 };
 }
-let player, mate, rivals, keeperB, keeperR, ball;
+var player, mate, rivals, keeperB, keeperR, ball;
 
 function resetPositions(){
   player  = mkEnt(W*.35, H*.62, 0, 205);
@@ -173,76 +180,119 @@ function resetPositions(){
   ball    = { x:W/2, y:H/2, vx:0, vy:0, r:8, owner:null, cd:0 };
 }
 
-function seek(e,tx,ty,dt,mul=1){
-  const dx = tx-e.x, dy = ty-e.y, d = Math.hypot(dx,dy);
+function seek(e,tx,ty,dt,mul){
+  mul = mul || 1;
+  var dx = tx-e.x, dy = ty-e.y, d = Math.hypot(dx,dy);
   if (d > 3){ e.vx = dx/d*e.speed*mul; e.vy = dy/d*e.speed*mul; }
   else { e.vx = 0; e.vy = 0; }
   e.x += e.vx*dt; e.y += e.vy*dt;
-  if (e.vx || e.vy){ const m = Math.hypot(e.vx,e.vy); e.dir.x = e.vx/m; e.dir.y = e.vy/m; }
+  if (e.vx || e.vy){ var m = Math.hypot(e.vx,e.vy); e.dir.x = e.vx/m; e.dir.y = e.vy/m; }
   e.x = clamp(e.x, F.x+e.r, F.x+F.w-e.r);
   e.y = clamp(e.y, F.y+e.r, F.y+F.h-e.r);
 }
 
-/* ============ ENTRADA: JOYSTICK FLOTANTE + BOTONES ============ */
-const joyBase = document.getElementById('joyBase'), joyKnob = document.getElementById('joyKnob'),
-      joyHint = document.getElementById('joyHint'), btnPass = document.getElementById('btnPass'),
-      btnShoot = document.getElementById('btnShoot');
-const JOY_R = 55;
-const input = { dir:{x:0,y:0}, mag:0, joyId:null, ox:0, oy:0 };
+/* ============================================================
+   ENTRADA — 100% táctil (touchstart/move/end) + ratón de respaldo
+   Compatible con cualquier webview, sin depender de PointerEvents
+   ============================================================ */
+var joyBase = document.getElementById('joyBase'), joyKnob = document.getElementById('joyKnob'),
+    joyHint = document.getElementById('joyHint'), btnPass = document.getElementById('btnPass'),
+    btnShoot = document.getElementById('btnShoot');
+var JOY_R = 55;
+var input = { dir:{x:0,y:0}, mag:0, joyId:null, ox:0, oy:0 };
+var mouseJoy = false;
 
 function joyToWorld(jx,jy){ return view.portrait ? {x:-jy, y:jx} : {x:jx, y:jy}; }
 
-function updateJoyVec(cx,cy){
-  let dx = cx-input.ox, dy = cy-input.oy;
-  const d = Math.hypot(dx,dy);
-  if (d > JOY_R){ dx *= JOY_R/d; dy *= JOY_R/d; }
-  joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-  let m = Math.min(d/JOY_R, 1);
-  m = m < 0.15 ? 0 : (m-0.15)/0.85;           // zona muerta + curva
-  input.mag = m;
-  if (d > 3){ const w = joyToWorld(dx/d, dy/d); input.dir.x = w.x; input.dir.y = w.y; }
+function showJoyAt(x,y){
+  joyBase.style.left = x+'px'; joyBase.style.top = y+'px';
+  joyBase.style.display = 'block';
+  joyHint.style.display = 'none';
 }
-function releaseJoy(id){
-  if (input.joyId === id){
-    input.joyId = null; input.mag = 0; input.dir.x = 0; input.dir.y = 0;
-    joyBase.style.display = 'none';
-    joyKnob.style.transform = 'translate(-50%,-50%)';
+function releaseJoy(){
+  input.joyId = null; input.mag = 0; input.dir.x = 0; input.dir.y = 0;
+  joyBase.style.display = 'none';
+  joyKnob.style.transform = 'translate(-50%,-50%)';
+}
+function updateJoyVec(cx,cy){
+  var dx = cx-input.ox, dy = cy-input.oy;
+  var d = Math.hypot(dx,dy);
+  if (d > JOY_R){ dx *= JOY_R/d; dy *= JOY_R/d; }
+  joyKnob.style.transform = 'translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
+  var m = Math.min(d/JOY_R, 1);
+  m = m < 0.15 ? 0 : (m-0.15)/0.85;      // zona muerta + curva
+  input.mag = m;
+  if (d > 3){ var w = joyToWorld(dx/d, dy/d); input.dir.x = w.x; input.dir.y = w.y; }
+}
+function isBtn(el){ return el && el.closest && el.closest('.btn'); }
+
+/* --- Joystick: eventos TÁCTILES --- */
+document.addEventListener('touchstart', function(e){
+  ensureAudio();
+  if (state === 'playing'){
+    for (var i = 0; i < e.changedTouches.length; i++){
+      var t = e.changedTouches[i];
+      if (isBtn(t.target)) continue;              // los botones se manejan solos
+      if (input.joyId === null){                  // el primer dedo libre = joystick
+        input.joyId = t.identifier;
+        input.ox = t.clientX; input.oy = t.clientY;
+        showJoyAt(t.clientX, t.clientY);
+        updateJoyVec(t.clientX, t.clientY);
+      }
+    }
+  }
+  if (e.cancelable) e.preventDefault();
+}, {passive:false});
+
+document.addEventListener('touchmove', function(e){
+  for (var i = 0; i < e.changedTouches.length; i++){
+    var t = e.changedTouches[i];
+    if (t.identifier === input.joyId) updateJoyVec(t.clientX, t.clientY);
+  }
+  if (e.cancelable) e.preventDefault();
+}, {passive:false});
+
+function onEndTouch(e){
+  for (var i = 0; i < e.changedTouches.length; i++){
+    if (e.changedTouches[i].identifier === input.joyId){ releaseJoy(); break; }
   }
 }
-window.addEventListener('pointerdown', e => {
+document.addEventListener('touchend', onEndTouch);
+document.addEventListener('touchcancel', onEndTouch);
+
+/* --- Joystick: ratón (para probar en PC) --- */
+cv.addEventListener('mousedown', function(e){
   ensureAudio();
   if (state !== 'playing') return;
-  if (e.target.closest('.btn')) return;                       // los botones se manejan aparte
-  if (e.pointerType === 'touch'){
-    if (input.joyId !== null) return;                          // ya hay un dedo en el joystick
-    if (e.clientX > view.cw * 0.62) return;                    // zona del joystick: mitad izquierda
-  }
-  input.joyId = e.pointerId; input.ox = e.clientX; input.oy = e.clientY;
-  joyBase.style.left = e.clientX+'px'; joyBase.style.top = e.clientY+'px';
-  joyBase.style.display = 'block'; joyHint.style.display = 'none';
+  mouseJoy = true;
+  input.ox = e.clientX; input.oy = e.clientY;
+  showJoyAt(e.clientX, e.clientY);
   updateJoyVec(e.clientX, e.clientY);
-  e.preventDefault();
-}, {passive:false});
-window.addEventListener('pointermove', e => {
-  if (e.pointerId === input.joyId){ updateJoyVec(e.clientX, e.clientY); e.preventDefault(); }
-}, {passive:false});
-window.addEventListener('pointerup',     e => releaseJoy(e.pointerId));
-window.addEventListener('pointercancel', e => releaseJoy(e.pointerId));
+});
+window.addEventListener('mousemove', function(e){ if (mouseJoy) updateJoyVec(e.clientX, e.clientY); });
+window.addEventListener('mouseup', function(){ if (mouseJoy){ mouseJoy = false; releaseJoy(); } });
 
+/* --- Botones de acción: respuesta instantánea táctil --- */
 function bindBtn(el, fn){
-  el.addEventListener('pointerdown', e => {
-    e.preventDefault(); e.stopPropagation(); ensureAudio();
-    el.classList.add('pressed'); fn();
+  function press(ev){
+    if (ev.cancelable) ev.preventDefault();
+    if (ev.stopPropagation) ev.stopPropagation();
+    ensureAudio();
+    el.classList.add('pressed');
+    fn();
+  }
+  el.addEventListener('touchstart', press, {passive:false});
+  el.addEventListener('mousedown', press);
+  ['touchend','touchcancel','mouseup','mouseleave'].forEach(function(t){
+    el.addEventListener(t, function(){ el.classList.remove('pressed'); });
   });
-  ['pointerup','pointercancel','pointerleave'].forEach(t =>
-    el.addEventListener(t, () => el.classList.remove('pressed')));
 }
 
 /* ============ ACCIONES ============ */
 function kick(dx,dy,power){
-  const d = Math.hypot(dx,dy) || 1;
+  var d = Math.hypot(dx,dy) || 1;
   ball.vx = dx/d*power; ball.vy = dy/d*power;
-  const o = ball.owner; ball.owner = null; ball.cd = 0.12;
+  var o = ball.owner; ball.owner = null; ball.cd = 0.12;
   if (o) o.cd = 0.45;
 }
 function doPass(){
@@ -257,10 +307,10 @@ function doPass(){
 }
 function doShoot(){
   if (state !== 'playing') return;
-  const sh = ball.owner;
+  var sh = ball.owner;
   if (sh === player || sh === mate){
-    const aimY = (input.mag > 0.2)
-      ? H/2 + input.dir.y * 62                       // ¡apunta con el joystick!
+    var aimY = (input.mag > 0.2)
+      ? H/2 + input.dir.y * 62                    // apunta con el joystick
       : H/2 + (sh.y - H/2) * 0.3;
     kick((F.x+F.w+8) - ball.x, clamp(aimY, GOAL.y1+12, GOAL.y2-12) - ball.y, 470);
     sShoot(); vib(25);
@@ -269,31 +319,29 @@ function doShoot(){
 bindBtn(btnPass, doPass);
 bindBtn(btnShoot, doShoot);
 
-/* Teclado (para probar en PC): WASD/flechas, X=pase, Espacio=disparo */
-const keys = {};
-window.addEventListener('keydown', e => {
+/* Teclado (PC): WASD/flechas, X=pase, Espacio=disparo */
+var keys = {};
+window.addEventListener('keydown', function(e){
   keys[e.code] = true; ensureAudio();
   if (e.code === 'Space' || e.code === 'KeyK') doShoot();
   if (e.code === 'KeyX'  || e.code === 'KeyP') doPass();
   if (e.code === 'Enter' && state !== 'playing' && state !== 'goal') startGame();
 });
-window.addEventListener('keyup', e => keys[e.code] = false);
+window.addEventListener('keyup', function(e){ keys[e.code] = false; });
 
-/* Bloqueo total de scroll/zoom/menú en móvil */
-document.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
-document.addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
 
 /* ============ IA ============ */
 function updateMate(dt){
   mate.decT = Math.max(0, mate.decT - dt);
   if (ball.owner === mate){
     seek(mate, F.x+F.w, H/2, dt, .95);
-    const pressed = rivals.some(r => dist(r, mate) < 55);
+    var pressed = rivals.some(function(r){ return dist(r, mate) < 55; });
     if (pressed && mate.decT === 0){
       kick(player.x - ball.x, player.y - ball.y, 340); sKick(); mate.decT = .8;
     } else if (dist(mate,{x:F.x+F.w,y:H/2}) < 185 && mate.decT === 0){
-      const aimY = H/2 + (Math.random()-.5)*80;
+      var aimY = H/2 + (Math.random()-.5)*80;
       kick((F.x+F.w+8)-ball.x, clamp(aimY,GOAL.y1+12,GOAL.y2-12)-ball.y, 440);
       sShoot(); mate.decT = 1;
     }
@@ -304,13 +352,13 @@ function updateMate(dt){
   } else seek(mate, ball.x+40, ball.y-20, dt, .8);
 }
 function updateRivals(dt){
-  const carrier = ball.owner;
-  rivals.forEach((r,i) => {
+  var carrier = ball.owner;
+  rivals.forEach(function(r,i){
     r.decT = Math.max(0, r.decT - dt);
     if (carrier === r){
       seek(r, F.x, H/2, dt, .93);
       if (dist(r,{x:F.x,y:H/2}) < 205 && r.decT === 0){
-        const aimY = H/2 + (Math.random()-.5)*95;
+        var aimY = H/2 + (Math.random()-.5)*95;
         kick((F.x-8)-ball.x, clamp(aimY,GOAL.y1+10,GOAL.y2-10)-ball.y, 430);
         sShoot(); r.decT = 1.2;
       }
@@ -323,11 +371,11 @@ function updateRivals(dt){
   });
 }
 function updateKeeper(k, dt){
-  const ty = clamp(ball.y, GOAL.y1+12, GOAL.y2-12);
+  var ty = clamp(ball.y, GOAL.y1+12, GOAL.y2-12);
   k.y += (ty - k.y) * Math.min(1, dt*6);
-  const ownerTeam = ball.owner ? ball.owner.team : null;
+  var ownerTeam = ball.owner ? ball.owner.team : null;
   if (ball.cd <= 0 && ownerTeam !== k.team && dist(k, ball) < k.r + ball.r + 6){
-    const dirx = k.team === 0 ? 1 : -1;
+    var dirx = k.team === 0 ? 1 : -1;
     ball.owner = null;
     ball.vx = dirx * (290 + Math.random()*90);
     ball.vy = (Math.random()-.5) * 200;
@@ -338,23 +386,24 @@ function updateKeeper(k, dt){
 /* ============ BALÓN ============ */
 function updateBall(dt){
   ball.cd = Math.max(0, ball.cd - dt);
-  [player, mate, rivals[0], rivals[1]].forEach(e => e.cd = Math.max(0, e.cd - dt));
+  var all = [player, mate, rivals[0], rivals[1]];
+  for (var i = 0; i < all.length; i++) all[i].cd = Math.max(0, all[i].cd - dt);
   if (ball.owner){
-    const o = ball.owner, lead = o.r + ball.r + 3;
+    var o = ball.owner, lead = o.r + ball.r + 3;
     ball.x = clamp(o.x + o.dir.x*lead, F.x+ball.r, F.x+F.w-ball.r);
     ball.y = clamp(o.y + o.dir.y*lead, F.y+ball.r, F.y+F.h-ball.r);
     ball.vx = o.vx; ball.vy = o.vy;
     trySteal();
   } else {
     ball.x += ball.vx*dt; ball.y += ball.vy*dt;
-    const f = Math.exp(-1.4*dt); ball.vx *= f; ball.vy *= f;
+    var f = Math.exp(-1.4*dt); ball.vx *= f; ball.vy *= f;
     if (Math.hypot(ball.vx, ball.vy) < 5){ ball.vx = 0; ball.vy = 0; }
     wallsAndGoals();
     if (state === 'playing') tryCapture();
   }
 }
 function wallsAndGoals(){
-  const inMouth = ball.y > GOAL.y1 && ball.y < GOAL.y2;
+  var inMouth = ball.y > GOAL.y1 && ball.y < GOAL.y2;
   if (ball.y - ball.r < F.y){ ball.y = F.y + ball.r; ball.vy = Math.abs(ball.vy)*.65; }
   if (ball.y + ball.r > F.y+F.h){ ball.y = F.y+F.h-ball.r; ball.vy = -Math.abs(ball.vy)*.65; }
   if (ball.x - ball.r < F.x){
@@ -368,7 +417,9 @@ function wallsAndGoals(){
 }
 function tryCapture(){
   if (ball.cd > 0) return;
-  for (const e of [player, mate, rivals[0], rivals[1]]){
+  var cands = [player, mate, rivals[0], rivals[1]];
+  for (var i = 0; i < cands.length; i++){
+    var e = cands[i];
     if (e.cd > 0) continue;
     if (dist(e, ball) < e.r + ball.r + 5){
       if (Math.hypot(ball.vx, ball.vy) < 430){
@@ -379,12 +430,13 @@ function tryCapture(){
   }
 }
 function trySteal(){
-  const o = ball.owner;
-  const enemies = o.team === 0 ? rivals : [player, mate];
-  for (const e of enemies){
+  var o = ball.owner;
+  var enemies = o.team === 0 ? rivals : [player, mate];
+  for (var i = 0; i < enemies.length; i++){
+    var e = enemies[i];
     if (dist(e,o) < e.r + o.r - 2){
       ball.owner = null; o.cd = .6; e.cd = .15;
-      const a = Math.random()*Math.PI*2;
+      var a = Math.random()*Math.PI*2;
       ball.x = (o.x+e.x)/2; ball.y = (o.y+e.y)/2;
       ball.vx = Math.cos(a)*90; ball.vy = Math.sin(a)*90;
       sTrap(); vib(10); return;
@@ -412,17 +464,17 @@ function update(dt){
   if (timeLeft <= 0){ timeLeft = 0; timeHUD(); endGame(); return; }
   timeHUD();
 
-  let mx = input.dir.x * input.mag, my = input.dir.y * input.mag;
+  var mx = input.dir.x * input.mag, my = input.dir.y * input.mag;
   if (keys.ArrowLeft || keys.KeyA) mx -= 1;
   if (keys.ArrowRight|| keys.KeyD) mx += 1;
   if (keys.ArrowUp   || keys.KeyW) my -= 1;
   if (keys.ArrowDown || keys.KeyS) my += 1;
-  const ml = Math.hypot(mx,my);
+  var ml = Math.hypot(mx,my);
   if (ml > 1){ mx /= ml; my /= ml; }
   player.vx = mx*player.speed; player.vy = my*player.speed;
   player.x = clamp(player.x + player.vx*dt, F.x+player.r, F.x+F.w-player.r);
   player.y = clamp(player.y + player.vy*dt, F.y+player.r, F.y+F.h-player.r);
-  if (mx || my){ const m = Math.hypot(mx,my); player.dir.x = mx/m; player.dir.y = my/m; }
+  if (mx || my){ var m = Math.hypot(mx,my); player.dir.x = mx/m; player.dir.y = my/m; }
 
   updateMate(dt); updateRivals(dt);
   updateKeeper(keeperB, dt); updateKeeper(keeperR, dt);
@@ -432,8 +484,8 @@ function update(dt){
 /* ============ DIBUJO ============ */
 function drawField(){
   ctx.fillStyle = '#14532d'; ctx.fillRect(F.x-32, F.y-32, F.w+64, F.h+64);
-  const n = 8, sw = F.w/n;
-  for (let i = 0; i < n; i++){
+  var n = 8, sw = F.w/n;
+  for (var i = 0; i < n; i++){
     ctx.fillStyle = i%2 ? '#1e8a45' : '#23964e';
     ctx.fillRect(F.x + i*sw, F.y, sw+1, F.h);
   }
@@ -446,15 +498,15 @@ function drawField(){
   ctx.strokeRect(F.x+F.w-92, H/2-105, 92, 210);
   ctx.strokeRect(F.x, H/2-55, 36, 110);
   ctx.strokeRect(F.x+F.w-36, H/2-55, 36, 110);
-  const gh = GOAL.y2 - GOAL.y1;
+  var gh = GOAL.y2 - GOAL.y1;
   ctx.fillStyle = 'rgba(255,255,255,.18)';
   ctx.fillRect(F.x-GOAL.depth, GOAL.y1, GOAL.depth, gh);
   ctx.fillRect(F.x+F.w, GOAL.y1, GOAL.depth, gh);
   ctx.strokeStyle = '#fff'; ctx.strokeRect(F.x-GOAL.depth, GOAL.y1, GOAL.depth, gh);
   ctx.strokeRect(F.x+F.w, GOAL.y1, GOAL.depth, gh);
   ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1;
-  for (let i = 1; i < 4; i++){
-    const y = GOAL.y1 + gh*i/4;
+  for (var j = 1; j < 4; j++){
+    var y = GOAL.y1 + gh*j/4;
     ctx.beginPath(); ctx.moveTo(F.x-GOAL.depth, y); ctx.lineTo(F.x, y); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(F.x+F.w, y); ctx.lineTo(F.x+F.w+GOAL.depth, y); ctx.stroke();
   }
@@ -464,15 +516,21 @@ function drawEnt(e, c1, c2, ring){
   ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fill();
   if (ring){
     ctx.beginPath(); ctx.arc(e.x, e.y, e.r+6, 0, Math.PI*2);
-    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.setLineDash([6,5]);
-    ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.setLineDash([6,5]);
+    ctx.lineWidth = 2.5; ctx.stroke(); ctx.setLineDash([]);
   }
-  const g = ctx.createRadialGradient(e.x-4, e.y-5, 2, e.x, e.y, e.r+1);
+  var g = ctx.createRadialGradient(e.x-4, e.y-5, 2, e.x, e.y, e.r+1);
   g.addColorStop(0, c1); g.addColorStop(1, c2);
   ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2);
   ctx.fillStyle = g; ctx.fill();
   ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.stroke();
-  ctx.beginPath(); ctx.arc(e.x + e.dir.x*e.r*.55, e.y + e.dir.y*e.r*.55, 3.4, 0, Math.PI*2);
+  // Flecha de dirección (orientación)
+  var ax = e.x + e.dir.x*(e.r+8), ay = e.y + e.dir.y*(e.r+8);
+  ctx.beginPath();
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(ax - e.dir.x*7 - e.dir.y*4, ay - e.dir.y*7 + e.dir.x*4);
+  ctx.lineTo(ax - e.dir.x*7 + e.dir.y*4, ay - e.dir.y*7 - e.dir.x*4);
+  ctx.closePath();
   ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill();
 }
 function drawBall(){
@@ -485,7 +543,7 @@ function drawBall(){
   ctx.fillStyle = '#444'; ctx.fill();
 }
 function draw(){
-  const dpr = view.dpr;
+  var dpr = view.dpr;
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle = '#06180c'; ctx.fillRect(0, 0, cv.width, cv.height);
   setWorldTransform();
@@ -493,14 +551,27 @@ function draw(){
   drawEnt(keeperB, '#4dd0e1', '#00838f', false);
   drawEnt(keeperR, '#ffb74d', '#e65100', false);
   drawEnt(mate, '#6ea8ff', '#1c56b8', false);
-  rivals.forEach(r => drawEnt(r, '#ff8a80', '#c62828', false));
+  rivals.forEach(function(r){ drawEnt(r, '#ff8a80', '#c62828', false); });
   drawEnt(player, '#64b5f6', '#1565c0', true);
   drawBall();
+
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  // Flecha amarilla sobre TU jugador (siempre visible)
+  if (state === 'playing' || state === 'goal'){
+    var p = worldToScreen(player.x, player.y);
+    var bob = Math.sin(performance.now()/250)*3;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y - 24 + bob);
+    ctx.lineTo(p.x - 8, p.y - 36 + bob);
+    ctx.lineTo(p.x + 8, p.y - 36 + bob);
+    ctx.closePath();
+    ctx.fillStyle = '#ffe945'; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
   if (msgT > 0 && msg){
-    ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.save();
     ctx.globalAlpha = Math.min(1, msgT/.3);
-    const size = Math.min(view.cw*.10, 58);
+    var size = Math.min(view.cw*.10, 58);
     ctx.font = '900 ' + size + 'px system-ui, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,.55)';
@@ -510,9 +581,9 @@ function draw(){
   }
 }
 
-let last = performance.now();
+var last = performance.now();
 function loop(t){
-  const dt = Math.min(.033, (t-last)/1000 || .016);
+  var dt = Math.min(.033, (t-last)/1000 || .016);
   last = t;
   update(dt); draw();
   requestAnimationFrame(loop);
@@ -520,12 +591,12 @@ function loop(t){
 requestAnimationFrame(loop);
 
 /* ============ HUD Y PANTALLAS ============ */
-const menuEl = document.getElementById('menu'), endEl = document.getElementById('end'),
-      scoreEl = document.getElementById('score'), timeEl = document.getElementById('time'),
-      resultTxt = document.getElementById('resultTxt'), finalScore = document.getElementById('finalScore');
+var menuEl = document.getElementById('menu'), endEl = document.getElementById('end'),
+    scoreEl = document.getElementById('score'), timeEl = document.getElementById('time'),
+    resultTxt = document.getElementById('resultTxt'), finalScore = document.getElementById('finalScore');
 
 function updateScoreHUD(){
-  scoreEl.innerHTML = `<span class="b">🔵 ${scoreB}</span><span>—</span><span class="r">${scoreR} 🔴</span>`;
+  scoreEl.innerHTML = '<span class="b">🔵 '+scoreB+'</span><span>—</span><span class="r">'+scoreR+' 🔴</span>';
 }
 function timeHUD(){ timeEl.textContent = '⏱️ ' + Math.ceil(timeLeft); }
 function startGame(){
@@ -542,8 +613,18 @@ function endGame(){
   endEl.style.display = 'flex';
   sWhistle(); vib([80,60,120]);
 }
-document.getElementById('btnPlay').addEventListener('click', () => { ensureAudio(); startGame(); });
-document.getElementById('btnRetry').addEventListener('click', () => { ensureAudio(); startGame(); });
+function bindTap(el, fn){
+  var lastTap = 0;
+  function fire(){
+    var n = Date.now();
+    if (n - lastTap < 500) return;
+    lastTap = n; ensureAudio(); fn();
+  }
+  el.addEventListener('touchstart', function(e){ if (e.cancelable) e.preventDefault(); fire(); }, {passive:false});
+  el.addEventListener('click', fire);
+}
+bindTap(document.getElementById('btnPlay'), startGame);
+bindTap(document.getElementById('btnRetry'), startGame);
 
 resetPositions(); updateScoreHUD();
 })();
