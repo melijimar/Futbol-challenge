@@ -5,323 +5,829 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Fútbol Challenge</title>
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07130b;font-family:Arial,sans-serif;touch-action:none}
+/* ============================================================
+   BASE / RESET
+   ============================================================ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07130b;
+  font-family:-apple-system,Arial,sans-serif;touch-action:none;
+  -webkit-touch-callout:none}
 #game{position:relative;width:100vw;height:100vh;overflow:hidden;background:#163d20}
-canvas{display:block;width:100%;height:100%}
-#hud{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:14px;align-items:center;background:rgba(0,0,0,.68);color:white;padding:8px 16px;border-radius:18px;font-weight:bold;font-size:clamp(14px,3vw,22px);z-index:3;white-space:nowrap}
-#hud .score{font-size:1.25em}
-#start,#end{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:10}
-.panel{width:min(90vw,420px);text-align:center;color:white;background:linear-gradient(145deg,#0b5b2a,#092d18);border:2px solid rgba(255,255,255,.25);border-radius:24px;padding:28px 22px;box-shadow:0 15px 50px rgba(0,0,0,.5)}
-h1{font-size:clamp(30px,9vw,54px);margin:0 0 10px;text-shadow:0 4px 0 #063516}
-.panel p{font-size:16px;line-height:1.45;opacity:.9}
-button{border:0;border-radius:14px;padding:14px 25px;font-size:18px;font-weight:bold;color:white;background:#f39c12;box-shadow:0 5px 0 #9b5d06;cursor:pointer}
-button:active{transform:translateY(3px);box-shadow:0 2px 0 #9b5d06}
+canvas{display:block;width:100%;height:100%;position:absolute;top:0;left:0}
+
+/* ============================================================
+   HUD
+   ============================================================ */
+#hud{position:absolute;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);
+  display:flex;gap:14px;align-items:center;background:rgba(0,0,0,.68);color:#fff;padding:8px 16px;
+  border-radius:18px;font-weight:700;font-size:clamp(13px,3vw,20px);z-index:3;white-space:nowrap}
+#hud .score{font-size:1.2em}
+#msg{position:absolute;left:50%;top:20%;transform:translateX(-50%);z-index:4;color:#fff;font-weight:900;
+  font-size:clamp(26px,8vw,56px);text-shadow:0 4px 8px #000;opacity:0;pointer-events:none;
+  transition:opacity .25s ease}
+
+/* ============================================================
+   START / END PANELS
+   ============================================================ */
+#start,#end{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.72);z-index:10;padding:16px}
 #end{display:none}
+.panel{width:min(90vw,420px);max-height:92vh;overflow-y:auto;text-align:center;color:#fff;
+  background:linear-gradient(145deg,#0b5b2a,#092d18);border:2px solid rgba(255,255,255,.25);
+  border-radius:24px;padding:26px 22px;box-shadow:0 15px 50px rgba(0,0,0,.5)}
+.panel h1{font-size:clamp(28px,8vw,50px);margin:0 0 10px;text-shadow:0 4px 0 #063516}
+.panel p{font-size:15px;line-height:1.45;opacity:.92;margin:10px 0}
+button{border:0;border-radius:14px;padding:14px 25px;font-size:17px;font-weight:700;color:#fff;
+  background:#f39c12;box-shadow:0 5px 0 #9b5d06;cursor:pointer;-webkit-appearance:none}
+button:active{transform:translateY(3px);box-shadow:0 2px 0 #9b5d06}
 .diffRow{display:flex;gap:8px;justify-content:center;margin:14px 0}
-.diffBtn{flex:1;padding:10px 6px;font-size:14px;background:#2c5f3a;box-shadow:0 4px 0 #163a20;border:2px solid transparent}
+.diffBtn{flex:1;padding:10px 6px;font-size:13px;background:#2c5f3a;box-shadow:0 4px 0 #163a20;
+  border:2px solid transparent}
 .diffBtn.sel{background:#f39c12;box-shadow:0 4px 0 #9b5d06;border-color:#fff}
-#controls{position:absolute;inset:0;z-index:5;pointer-events:none}
-#joyBase{position:absolute;left:22px;bottom:calc(24px + env(safe-area-inset-bottom));width:128px;height:128px;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.3);pointer-events:auto}
-#joyKnob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px;border-radius:50%;background:rgba(255,255,255,.65);box-shadow:0 3px 10px #0008}
-.actions{position:absolute;right:22px;bottom:calc(25px + env(safe-area-inset-bottom));display:flex;gap:12px;pointer-events:auto}
-.action{width:82px;height:82px;border-radius:50%;padding:0;font-size:14px;border:2px solid rgba(255,255,255,.4)}
+
+/* ============================================================
+   ON-SCREEN CONTROLS
+   safe-area handled via padding on the container (not calc()+env()
+   on each child) so it degrades gracefully on any WebView.
+   ============================================================ */
+#controls{position:absolute;inset:0;z-index:5;pointer-events:none;
+  padding:0 max(14px,env(safe-area-inset-right,0px)) max(14px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px))}
+#joyBase{position:absolute;left:14px;bottom:20px;width:clamp(108px,30vw,138px);height:clamp(108px,30vw,138px);
+  border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.35);
+  pointer-events:auto}
+#joyKnob{position:absolute;left:50%;top:50%;width:44%;height:44%;margin-left:-22%;margin-top:-22%;
+  border-radius:50%;background:rgba(255,255,255,.68);box-shadow:0 3px 10px rgba(0,0,0,.5);
+  will-change:transform}
+.actions{position:absolute;right:14px;bottom:22px;display:flex;gap:12px;pointer-events:auto}
+.action{width:clamp(64px,18vw,84px);height:clamp(64px,18vw,84px);border-radius:50%;padding:0;
+  font-size:clamp(11px,3vw,14px);border:2px solid rgba(255,255,255,.45);color:#fff;font-weight:700;
+  display:flex;align-items:center;justify-content:center;text-align:center}
+.action:active{filter:brightness(.85)}
 #shoot{background:#e74c3c;box-shadow:0 5px 0 #8d261c}
 #pass{background:#3498db;box-shadow:0 5px 0 #1d5a80}
-#msg{position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:4;color:#fff;font-weight:900;font-size:clamp(28px,8vw,60px);text-shadow:0 4px 8px #000;opacity:0;pointer-events:none}
+
+/* Small toast used for one-time hints, non-blocking, auto-dismiss */
+#toast{position:absolute;top:calc(env(safe-area-inset-top,0px) + 54px);left:50%;transform:translateX(-50%);
+  z-index:6;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:5px 12px;border-radius:10px;
+  pointer-events:none;opacity:0;transition:opacity .3s ease}
 </style>
 </head>
 <body>
 <div id="game">
 <canvas id="canvas"></canvas>
-<div id="hud"><span>⚽ FÚTBOL CHALLENGE</span><span class="score"><b id="home">0</b> - <b id="away">0</b></span><span>⏱️ <b id="time">90</b></span></div>
+
+<div id="hud">
+  <span>⚽ FÚTBOL CHALLENGE</span>
+  <span class="score"><b id="home">0</b>&nbsp;-&nbsp;<b id="away">0</b></span>
+  <span>⏱️ <b id="time">90</b></span>
+</div>
 <div id="msg"></div>
+<div id="toast"></div>
 
 <div id="controls">
-  <div id="joyBase"><div id="joyKnob"></div></div>
+  <div id="joyBase" aria-hidden="true"><div id="joyKnob"></div></div>
   <div class="actions">
-    <button class="action" id="pass">PASE</button>
-    <button class="action" id="shoot">DISPARO</button>
+    <button class="action" id="pass" type="button">PASE</button>
+    <button class="action" id="shoot" type="button">DISPARO</button>
   </div>
 </div>
 
 <div id="start"><div class="panel">
-<h1>⚽ FÚTBOL<br>CHALLENGE</h1>
-<p>¡Marca más goles que el rival antes de que termine el partido!</p>
-<div class="diffRow">
-  <button class="diffBtn" data-d="0.72">FÁCIL</button>
-  <button class="diffBtn sel" data-d="1">NORMAL</button>
-  <button class="diffBtn" data-d="1.35">DIFÍCIL</button>
-</div>
-<p>🎮 El control cambia solo al jugador más cercano al balón (anillo amarillo).<br>🔵 PASE &nbsp; 🔴 DISPARO</p>
-<button id="startBtn">JUGAR</button>
+  <h1>⚽ FÚTBOL<br>CHALLENGE</h1>
+  <p>¡Marca más goles que el rival antes de que termine el partido!</p>
+  <div class="diffRow">
+    <button class="diffBtn" data-d="0.72" type="button">FÁCIL</button>
+    <button class="diffBtn sel" data-d="1" type="button">NORMAL</button>
+    <button class="diffBtn" data-d="1.35" type="button">DIFÍCIL</button>
+  </div>
+  <p>🎮 El control cambia solo al jugador tuyo más cercano al balón (anillo amarillo).<br>
+     🔵 PASE &nbsp; 🔴 DISPARO — funcionan a cualquier distancia si tienes el balón.</p>
+  <button id="startBtn" type="button">JUGAR</button>
 </div></div>
 
 <div id="end"><div class="panel">
-<h1 id="result">¡PARTIDO TERMINADO!</h1>
-<p id="finalScore"></p>
-<button id="again">JUGAR DE NUEVO</button>
+  <h1 id="result">¡PARTIDO TERMINADO!</h1>
+  <p id="finalScore"></p>
+  <button id="again" type="button">JUGAR DE NUEVO</button>
 </div></div>
 </div>
 
 <script>
-const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
-const homeEl=document.getElementById('home'),awayEl=document.getElementById('away'),timeEl=document.getElementById('time');
-const start=document.getElementById('start'),end=document.getElementById('end'),result=document.getElementById('result'),finalScore=document.getElementById('finalScore'),msg=document.getElementById('msg');
-let W,H,field={x:0,y:0,w:0,h:0};
-let running=false,scoreH=0,scoreA=0,timeLeft=90,last=0,raf;
-let joy={x:0,y:0,active:false,id:null},keys={};
-let teammates,controlled=0,ball,opponents,keeper,protect=0;
-let difficulty=1;
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+"use strict";
+/* ================================================================
+   FÚTBOL CHALLENGE — motor de juego
+   Organizado en módulos: Config, Utils, State, Input, Physics, AI,
+   Entities, Render, UI, Engine.
+   Un solo archivo, sin dependencias externas, pensado para
+   GitHub Pages / Safari iOS.
+   ================================================================ */
 
-// difficulty selector
-document.querySelectorAll('.diffBtn').forEach(btn=>{
- btn.addEventListener('click',()=>{
-   document.querySelectorAll('.diffBtn').forEach(b=>b.classList.remove('sel'));
-   btn.classList.add('sel');difficulty=parseFloat(btn.dataset.d);
- });
-});
+/* ---------------------------------------------------------------
+   1. CONFIG — todas las constantes ajustables en un solo lugar.
+   Los tamaños son fracciones del campo / pantalla, nunca px fijos,
+   para que el juego escale a cualquier dispositivo.
+   --------------------------------------------------------------- */
+const CONFIG = {
+  matchSeconds: 90,
+  fieldAspect: 1.55,        // ancho:alto de la cancha (siempre "de cancha", nunca angosta)
+  fieldMaxWFrac: 0.92,      // % del ancho de pantalla que puede ocupar el campo
+  fieldMaxHFrac: 0.80,      // % del alto de pantalla que puede ocupar el campo
+  playerRFrac: 0.028,       // radio de jugador como fracción del ancho del campo
+  ballRFrac: 0.015,
+  keeperRFrac: 0.034,
+  playerSpeed: 230,         // px/seg del jugador controlado
+  supportSpeed: 120,        // px/seg de los compañeros IA
+  shotPower: 650,
+  passPowerMin: 220,
+  passPowerMax: 480,
+  ballFriction: 0.55,       // multiplicador de velocidad por segundo (más alto = menos fricción)
+  pickupRadius: 32,
+  actionRadius: 60,         // qué tan lejos del balón puedes presionar pase/disparo y que "cuente"
+  possessionGraceSec: 0.4,  // tiempo protegido tras recibir el balón antes de poder ser robado
+  stealRadius: 30,
+  joystickDeadzone: 0.14,
+  colors: {
+    grassLight: '#247b39', grassDark: '#155d2b',
+    team: '#e74c3c', rival: '#2980db', keeper: '#f1c40f',
+    ball: '#ffffff', ballEdge: '#222222', line: 'rgba(255,255,255,.9)'
+  }
+};
 
-// Field always keeps a real "pitch" shape (wide, not tall) no matter how the phone is held,
-// so directions/shots/passes always behave the same and running looks natural.
-function resize(){
- canvas.width=innerWidth*devicePixelRatio; canvas.height=innerHeight*devicePixelRatio;
- canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';
- ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
- W=innerWidth;H=innerHeight;
- const ratio=1.55;
- let fw=W*.92,fh=fw/ratio;
- if(fh>H*.80){fh=H*.80;fw=fh*ratio}
- field={x:(W-fw)/2,y:(H-fh)/2,w:fw,h:fh};
-}
-addEventListener('resize',resize);resize();
+const DIFFICULTY_DEFAULT = 1;
 
-function reset(){
- scoreH=scoreA=0;timeLeft=90;homeEl.textContent=0;awayEl.textContent=0;timeEl.textContent=90;
- const cy=field.y+field.h/2;
- teammates=[
-  {x:field.x+field.w*.25,y:cy,r:16,num:10,offset:0,bob:0},
-  {x:field.x+field.w*.16,y:cy-field.h*.22,r:16,num:7,offset:-field.h*.22,bob:0},
-  {x:field.x+field.w*.16,y:cy+field.h*.22,r:16,num:9,offset:field.h*.22,bob:0}
- ];
- controlled=0;protect=0;
- ball={x:teammates[0].x+22,y:teammates[0].y,r:9,vx:0,vy:0,owner:null,holder:-1};
- opponents=[
- {x:field.x+field.w*.55,y:cy-field.h*.24,r:17,s:78*difficulty,zoneY:-field.h*.24,zoneXFrac:.58},
- {x:field.x+field.w*.65,y:cy+field.h*.24,r:17,s:70*difficulty,zoneY:field.h*.24,zoneXFrac:.66},
- {x:field.x+field.w*.75,y:cy,r:17,s:82*difficulty,zoneY:0,zoneXFrac:.76}
- ];
- opponents.forEach(o=>o.bob=0);
- keeper={x:field.x+field.w*.91,y:cy,r:20};
- msg.style.opacity=0;
-}
-function startGame(){reset();start.style.display='none';end.style.display='none';running=true;last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
-function finish(){
- running=false;end.style.display='flex';
- result.textContent=scoreH>scoreA?'🏆 ¡VICTORIA!':scoreH<scoreA?'😢 ¡DERROTA!':'🤝 ¡EMPATE!';
- finalScore.textContent=`Resultado final: ${scoreH} - ${scoreA}`;
-}
-document.getElementById('startBtn').onclick=startGame;
-document.getElementById('again').onclick=startGame;
+/* ---------------------------------------------------------------
+   2. UTILS — funciones puras, sin estado, reutilizables.
+   Se evita Math.hypot en el loop caliente (más lento que sqrt
+   directo para este caso, sin riesgo real de overflow aquí).
+   --------------------------------------------------------------- */
+const Utils = {
+  clamp(v, a, b) { return v < a ? a : (v > b ? b : v); },
+  dist(ax, ay, bx, by) { const dx = bx - ax, dy = by - ay; return Math.sqrt(dx * dx + dy * dy); },
+  applyDeadzone(mag, dz) {
+    if (mag < dz) return 0;
+    return (mag - dz) / (1 - dz); // respuesta progresiva tras la zona muerta
+  }
+};
 
-addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key===' '){e.preventDefault();shoot()}});
-addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+/* ---------------------------------------------------------------
+   3. STATE — estado mutable central del partido.
+   Los arrays de entidades se crean UNA vez por partido (en
+   Match.reset) y se reutilizan cuadro a cuadro: nada de crear
+   arrays u objetos nuevos dentro del loop de update/draw.
+   --------------------------------------------------------------- */
+const State = {
+  W: 0, H: 0,
+  field: { x: 0, y: 0, w: 0, h: 0 },
+  running: false,
+  scoreHome: 0, scoreAway: 0,
+  timeLeft: CONFIG.matchSeconds,
+  lastTs: 0,
+  difficulty: DIFFICULTY_DEFAULT,
+  teammates: null,      // 3 jugadores propios
+  opponents: null,      // 3 rivales
+  keeper: null,
+  ball: null,
+  controlled: 0,
+  possessionProtect: 0,
+  allEntities: null      // teammates + opponents + keeper, precomputado una vez
+};
 
-const base=document.getElementById('joyBase'),knob=document.getElementById('joyKnob');
-function joyMove(e){
- const r=base.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
- let dx=e.clientX-cx,dy=e.clientY-cy,d=Math.hypot(dx,dy),max=r.width*.34;
- if(d>max){dx*=max/d;dy*=max/d}
- joy.x=dx/max;joy.y=dy/max;
- knob.style.transform=`translate(${dx}px,${dy}px)`;
-}
-base.addEventListener('pointerdown',e=>{joy.active=true;joy.id=e.pointerId;base.setPointerCapture(e.pointerId);joyMove(e)});
-base.addEventListener('pointermove',e=>{if(joy.active&&e.pointerId===joy.id)joyMove(e)});
-function joyUp(){joy.active=false;joy.x=joy.y=0;knob.style.transform='translate(0,0)'}
-base.addEventListener('pointerup',joyUp);base.addEventListener('pointercancel',joyUp);
-document.getElementById('shoot').addEventListener('pointerdown',e=>{e.preventDefault();shoot()});
-document.getElementById('pass').addEventListener('pointerdown',e=>{e.preventDefault();passBall()});
+/* ---------------------------------------------------------------
+   4. DOM refs (una sola vez)
+   --------------------------------------------------------------- */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+const hudHome = document.getElementById('home');
+const hudAway = document.getElementById('away');
+const hudTime = document.getElementById('time');
+const startPanel = document.getElementById('start');
+const endPanel = document.getElementById('end');
+const resultEl = document.getElementById('result');
+const finalScoreEl = document.getElementById('finalScore');
+const msgEl = document.getElementById('msg');
+const toastEl = document.getElementById('toast');
+const joyBase = document.getElementById('joyBase');
+const joyKnob = document.getElementById('joyKnob');
+const shootBtn = document.getElementById('shoot');
+const passBtn = document.getElementById('pass');
 
-function shoot(){
- if(!running)return;
- const cp=teammates[controlled];
- if(!(ball.owner==='player'||dist(ball,cp)<60))return;
- const dx=field.x+field.w-cp.x, dy=(field.y+field.h/2)-cp.y;
- const len=Math.hypot(dx,dy)||1;
- ball.owner=null;ball.holder=-1;protect=0;
- ball.x=cp.x;ball.y=cp.y;
- const power=650;
- ball.vx=dx/len*power;ball.vy=dy/len*power;
+/* ---------------------------------------------------------------
+   5. INPUT — joystick con zona muerta + respuesta analógica,
+   multitouch (cada control rastrea su propio pointerId, así que
+   el joystick y los botones funcionan al mismo tiempo sin pisarse),
+   y fallback con teclado para pruebas en escritorio.
+   --------------------------------------------------------------- */
+const Input = {
+  joyX: 0, joyY: 0, joyActive: false, joyPointerId: null,
+  keys: Object.create(null),
+
+  init() {
+    // Joystick — Pointer Events son el estándar moderno; se agrega
+    // touchstart/touchend como red de seguridad para WebViews que
+    // no implementen Pointer Events completamente (p. ej. algunos
+    // navegadores embebidos dentro de apps de mensajería).
+    joyBase.addEventListener('pointerdown', this.onJoyStart.bind(this));
+    joyBase.addEventListener('pointermove', this.onJoyMove.bind(this));
+    joyBase.addEventListener('pointerup', this.onJoyEnd.bind(this));
+    joyBase.addEventListener('pointercancel', this.onJoyEnd.bind(this));
+
+    shootBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); Actions.shoot(); }, { passive: false });
+    passBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); Actions.pass(); }, { passive: false });
+
+    // Fallback táctil por si algún WebView no dispara pointerdown en botones
+    shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); Actions.shoot(); }, { passive: false });
+    passBtn.addEventListener('touchstart', (e) => { e.preventDefault(); Actions.pass(); }, { passive: false });
+
+    window.addEventListener('keydown', (e) => {
+      this.keys[e.key.toLowerCase()] = true;
+      if (e.key === ' ') { e.preventDefault(); Actions.shoot(); }
+    });
+    window.addEventListener('keyup', (e) => { this.keys[e.key.toLowerCase()] = false; });
+  },
+
+  onJoyStart(e) {
+    this.joyActive = true;
+    this.joyPointerId = e.pointerId;
+    try { joyBase.setPointerCapture(e.pointerId); } catch (_) { /* no-op si no está soportado */ }
+    this.updateJoy(e);
+  },
+  onJoyMove(e) {
+    if (this.joyActive && e.pointerId === this.joyPointerId) this.updateJoy(e);
+  },
+  onJoyEnd(e) {
+    if (e.pointerId !== this.joyPointerId && this.joyPointerId !== null) return;
+    this.joyActive = false;
+    this.joyPointerId = null;
+    this.joyX = 0; this.joyY = 0;
+    joyKnob.style.transform = 'translate(0,0)';
+  },
+  updateJoy(e) {
+    const r = joyBase.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    let dx = e.clientX - cx, dy = e.clientY - cy;
+    const rawMag = Math.sqrt(dx * dx + dy * dy);
+    const maxR = r.width * 0.34;
+    const clampedMag = Math.min(rawMag, maxR);
+    const norm = clampedMag / maxR; // 0..1
+    const shaped = Utils.applyDeadzone(norm, CONFIG.joystickDeadzone);
+    const ux = rawMag > 0 ? dx / rawMag : 0, uy = rawMag > 0 ? dy / rawMag : 0;
+    this.joyX = ux * shaped;
+    this.joyY = uy * shaped;
+    joyKnob.style.transform = `translate(${ux * clampedMag}px,${uy * clampedMag}px)`;
+  },
+
+  // Devuelve el vector de movimiento final (joystick + teclado, con teclado como prioridad si se usa)
+  getMoveVector() {
+    let ax = this.joyX, ay = this.joyY;
+    if (this.keys['arrowleft'] || this.keys['a']) ax = -1;
+    if (this.keys['arrowright'] || this.keys['d']) ax = 1;
+    if (this.keys['arrowup'] || this.keys['w']) ay = -1;
+    if (this.keys['arrowdown'] || this.keys['s']) ay = 1;
+    const mag = Math.sqrt(ax * ax + ay * ay);
+    if (mag > 1) { ax /= mag; ay /= mag; }
+    return { x: ax, y: ay, mag };
+  }
+};
+
+/* ---------------------------------------------------------------
+   6. ENTITY FACTORY — sin literales mágicos repetidos; el tamaño
+   de cada entidad se calcula desde el campo actual (responsive).
+   --------------------------------------------------------------- */
+function makeTeammate(x, y, num, offset) {
+  return { x, y, r: State.field.w * CONFIG.playerRFrac, num, offset, bob: 0 };
 }
-function passBall(){
- if(!running)return;
- const cp=teammates[controlled];
- if(!(ball.owner==='player'||dist(ball,cp)<60))return;
- let target=null,bestScore=-Infinity;
- teammates.forEach((t,i)=>{
-   if(i===controlled)return;
-   const score=(t.x-cp.x)-Math.abs(t.y-cp.y)*.3;
-   if(score>bestScore){bestScore=score;target=t}
- });
- ball.owner=null;ball.holder=-1;protect=0;
- ball.x=cp.x;ball.y=cp.y;
- if(target){
-   const dx=target.x-cp.x,dy=target.y-cp.y,len=Math.hypot(dx,dy)||1;
-   const power=clamp(len*1.4,220,480);
-   ball.vx=dx/len*power;ball.vy=dy/len*power;
- } else {
-   ball.vx=260;ball.vy=(field.y+field.h/2-cp.y)*1.3;
- }
+function makeOpponent(x, y, speedBase, zoneY, zoneXFrac) {
+  return { x, y, r: State.field.w * CONFIG.playerRFrac, s: speedBase * State.difficulty, zoneY, zoneXFrac, bob: 0 };
 }
-function scoreGoal(team){
- if(team==='home')scoreH++;else scoreA++;
- homeEl.textContent=scoreH;awayEl.textContent=scoreA;
- msg.textContent=team==='home'?'⚽ ¡GOOOOL!':'😱 ¡GOL DEL RIVAL!';
- msg.style.opacity=1;setTimeout(()=>msg.style.opacity=0,900);
- resetPositions();
+
+/* ---------------------------------------------------------------
+   7. MATCH — arranque / reinicio de un partido y de posiciones
+   tras un gol. Aquí SÍ se crean los objetos (una vez por partido
+   o por gol, nunca dentro del loop de 60fps).
+   --------------------------------------------------------------- */
+const Match = {
+  reset() {
+    State.scoreHome = 0; State.scoreAway = 0;
+    State.timeLeft = CONFIG.matchSeconds;
+    hudHome.textContent = 0; hudAway.textContent = 0; hudTime.textContent = CONFIG.matchSeconds;
+
+    const f = State.field, cy = f.y + f.h / 2;
+    const pr = f.w * CONFIG.playerRFrac;
+
+    State.teammates = [
+      makeTeammate(f.x + f.w * .25, cy, 10, 0),
+      makeTeammate(f.x + f.w * .16, cy - f.h * .22, 7, -f.h * .22),
+      makeTeammate(f.x + f.w * .16, cy + f.h * .22, 9, f.h * .22)
+    ];
+    State.controlled = 0;
+    State.possessionProtect = 0;
+
+    State.ball = {
+      x: State.teammates[0].x + pr * 1.5, y: State.teammates[0].y,
+      r: f.w * CONFIG.ballRFrac, vx: 0, vy: 0, owner: null, holder: -1
+    };
+
+    State.opponents = [
+      makeOpponent(f.x + f.w * .55, cy - f.h * .24, 78, -f.h * .24, .58),
+      makeOpponent(f.x + f.w * .65, cy + f.h * .24, 70, f.h * .24, .66),
+      makeOpponent(f.x + f.w * .75, cy, 82, 0, .76)
+    ];
+
+    State.keeper = { x: f.x + f.w * .91, y: cy, r: f.w * CONFIG.keeperRFrac, bob: 0 };
+
+    // Precomputado una sola vez: se reutiliza cada frame en vez de
+    // reconstruir un array nuevo (evita presión sobre el GC).
+    State.allEntities = State.teammates.concat(State.opponents, [State.keeper]);
+
+    msgEl.style.opacity = 0;
+  },
+
+  resetPositions() {
+    const f = State.field, cy = f.y + f.h / 2;
+    const t = State.teammates, o = State.opponents;
+    t[0].x = f.x + f.w * .25; t[0].y = cy;
+    t[1].x = f.x + f.w * .16; t[1].y = cy - f.h * .22;
+    t[2].x = f.x + f.w * .16; t[2].y = cy + f.h * .22;
+    State.controlled = 0; State.possessionProtect = 0;
+
+    const b = State.ball;
+    b.x = t[0].x + b.r * 2.5; b.y = cy; b.vx = 0; b.vy = 0; b.owner = null; b.holder = -1;
+
+    o[0].x = f.x + f.w * .55; o[0].y = cy - f.h * .24;
+    o[1].x = f.x + f.w * .65; o[1].y = cy + f.h * .24;
+    o[2].x = f.x + f.w * .75; o[2].y = cy;
+
+    State.keeper.y = cy;
+  },
+
+  start() {
+    Match.reset();
+    startPanel.style.display = 'none';
+    endPanel.style.display = 'none';
+    State.running = true;
+    State.lastTs = performance.now();
+    cancelAnimationFrame(Engine.rafId);
+    Engine.rafId = requestAnimationFrame(Engine.loop);
+  },
+
+  finish() {
+    State.running = false;
+    endPanel.style.display = 'flex';
+    resultEl.textContent = State.scoreHome > State.scoreAway ? '🏆 ¡VICTORIA!'
+      : State.scoreHome < State.scoreAway ? '😢 ¡DERROTA!' : '🤝 ¡EMPATE!';
+    finalScoreEl.textContent = `Resultado final: ${State.scoreHome} - ${State.scoreAway}`;
+  },
+
+  scoreGoal(team) {
+    if (team === 'home') State.scoreHome++; else State.scoreAway++;
+    hudHome.textContent = State.scoreHome; hudAway.textContent = State.scoreAway;
+    msgEl.textContent = team === 'home' ? '⚽ ¡GOOOOL!' : '😱 ¡GOL DEL RIVAL!';
+    msgEl.style.opacity = 1;
+    setTimeout(() => { msgEl.style.opacity = 0; }, 900);
+    Match.resetPositions();
+  }
+};
+
+/* ---------------------------------------------------------------
+   8. ACTIONS — disparo y pase. Ambos funcionan si tienes el balón
+   O si estás a <= actionRadius de él (así nunca "no responden"
+   por medio pixel de diferencia). El pase apunta a un compañero
+   real (el mejor ubicado hacia adelante), el disparo siempre
+   apunta al centro del arco rival con potencia fija y suficiente
+   para cruzar toda la cancha (fricción corregida, ver Physics).
+   --------------------------------------------------------------- */
+const Actions = {
+  shoot() {
+    if (!State.running) return;
+    const cp = State.teammates[State.controlled];
+    const b = State.ball;
+    if (!(b.owner === 'player' || Utils.dist(b.x, b.y, cp.x, cp.y) < CONFIG.actionRadius)) return;
+    const f = State.field;
+    const dx = f.x + f.w - cp.x, dy = (f.y + f.h / 2) - cp.y;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    b.owner = null; b.holder = -1; State.possessionProtect = 0;
+    b.x = cp.x; b.y = cp.y;
+    b.vx = (dx / len) * CONFIG.shotPower;
+    b.vy = (dy / len) * CONFIG.shotPower;
+  },
+
+  pass() {
+    if (!State.running) return;
+    const cp = State.teammates[State.controlled];
+    const b = State.ball;
+    if (!(b.owner === 'player' || Utils.dist(b.x, b.y, cp.x, cp.y) < CONFIG.actionRadius)) return;
+
+    let target = null, bestScore = -Infinity;
+    for (let i = 0; i < State.teammates.length; i++) {
+      if (i === State.controlled) continue;
+      const t = State.teammates[i];
+      const score = (t.x - cp.x) - Math.abs(t.y - cp.y) * 0.3;
+      if (score > bestScore) { bestScore = score; target = t; }
+    }
+
+    b.owner = null; b.holder = -1; State.possessionProtect = 0;
+    b.x = cp.x; b.y = cp.y;
+    if (target) {
+      const dx = target.x - cp.x, dy = target.y - cp.y;
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const power = Utils.clamp(len * 1.4, CONFIG.passPowerMin, CONFIG.passPowerMax);
+      b.vx = (dx / len) * power;
+      b.vy = (dy / len) * power;
+    } else {
+      b.vx = 260; b.vy = ((State.field.y + State.field.h / 2) - cp.y) * 1.3;
+    }
+  }
+};
+
+/* ---------------------------------------------------------------
+   9. PHYSICS — movimiento del balón, fricción, rebotes en banda,
+   y colisión balón-jugador (para que nunca atraviese cuerpos ni
+   vibre: se aplica una única corrección de posición por cuadro,
+   sin iterar hasta "cero superposición", así no puede oscilar).
+   --------------------------------------------------------------- */
+const Physics = {
+  updateBall(dt) {
+    const b = State.ball, f = State.field;
+    if (b.owner === 'player') return; // el balón sigue al jugador, no tiene física propia
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    const decay = Math.pow(CONFIG.ballFriction, dt);
+    b.vx *= decay; b.vy *= decay;
+    if (b.y < f.y + 10 || b.y > f.y + f.h - 10) b.vy *= -0.65;
+    if (b.x < f.x + 10) b.vx *= -0.65;
+  },
+
+  // El balón libre no puede atravesar a un jugador: si se solapa,
+  // se empuja hacia afuera una vez (sin loop) y se amortigua la
+  // velocidad en el eje de contacto — evita "temblores".
+  resolveBallCollisions() {
+    const b = State.ball;
+    if (b.owner === 'player') return;
+    const list = State.allEntities;
+    for (let i = 0; i < list.length; i++) {
+      const e = list[i];
+      const dx = b.x - e.x, dy = b.y - e.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      const minD = b.r + e.r;
+      if (d > 0 && d < minD) {
+        const push = (minD - d);
+        const ux = dx / d, uy = dy / d;
+        b.x += ux * push; b.y += uy * push;
+        b.vx *= 0.7; b.vy *= 0.7;
+      }
+    }
+  },
+
+  // Separa jugadores que quedaron demasiado cerca entre sí, para
+  // que no se amontonen sobre el balón o entre ellos. Iteraciones
+  // limitadas (no es una simulación física completa, solo evita
+  // el amontonamiento visual/de gameplay).
+  separateEntities() {
+    const list = State.allEntities, f = State.field;
+    for (let iter = 0; iter < 3; iter++) {
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          const a = list[i], b2 = list[j];
+          let dx = b2.x - a.x, dy = b2.y - a.y;
+          let d = Math.sqrt(dx * dx + dy * dy);
+          const minD = a.r + b2.r + 14;
+          if (d < minD) {
+            if (d < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.sqrt(dx * dx + dy * dy) || 1; }
+            const push = (minD - d) / 2, ux = dx / d, uy = dy / d;
+            a.x -= ux * push; a.y -= uy * push;
+            b2.x += ux * push; b2.y += uy * push;
+          }
+        }
+      }
+    }
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      p.x = Utils.clamp(p.x, f.x + p.r, f.x + f.w - p.r);
+      p.y = Utils.clamp(p.y, f.y + p.r, f.y + f.h - p.r);
+    }
+  }
+};
+
+/* ---------------------------------------------------------------
+   10. AI — comportamiento de rivales y compañeros. Cada rival
+   tiene una zona defensiva propia (zoneY/zoneXFrac) y solo se
+   inclina parcialmente hacia el balón, para no amontonarse todos
+   en el mismo punto. Un solo rival "presiona" (marca al que tiene
+   el balón); los otros dos mantienen posición táctica.
+   --------------------------------------------------------------- */
+function moveToward(e, tx, ty, spd, dt) {
+  const dx = tx - e.x, dy = ty - e.y;
+  const d = Math.sqrt(dx * dx + dy * dy);
+  if (d < 0.5) return;
+  const step = Math.min(spd * dt, d);
+  e.x += (dx / d) * step;
+  e.y += (dy / d) * step;
+  if (step > 0.3) e.bob += dt * 16;
 }
-function resetPositions(){
- const cy=field.y+field.h/2;
- teammates[0].x=field.x+field.w*.25;teammates[0].y=cy;
- teammates[1].x=field.x+field.w*.16;teammates[1].y=cy-field.h*.22;
- teammates[2].x=field.x+field.w*.16;teammates[2].y=cy+field.h*.22;
- controlled=0;protect=0;
- ball.x=teammates[0].x+25;ball.y=cy;ball.vx=ball.vy=0;ball.owner=null;ball.holder=-1;
- opponents[0].x=field.x+field.w*.55;opponents[0].y=cy-field.h*.24;
- opponents[1].x=field.x+field.w*.65;opponents[1].y=cy+field.h*.24;
- opponents[2].x=field.x+field.w*.75;opponents[2].y=cy;
- keeper.y=cy;
+
+const AI = {
+  updateOpponents(dt) {
+    const f = State.field, cy = f.y + f.h / 2, b = State.ball;
+    const cp = State.teammates[State.controlled];
+    const opp = State.opponents;
+    for (let i = 0; i < opp.length; i++) {
+      const o = opp[i];
+      const zoneX = Utils.clamp(f.x + f.w * o.zoneXFrac + (b.x - (f.x + f.w * .5)) * .2, f.x + f.w * .42, f.x + f.w - 35);
+      const zoneY = Utils.clamp(cy + o.zoneY + (b.y - cy) * .35, f.y + 25, f.y + f.h - 25);
+      let tx, ty;
+      if (i === 0) { // presionador designado
+        if (b.owner === 'player') { tx = cp.x; ty = cp.y; } else { tx = b.x; ty = b.y; }
+      } else {
+        tx = zoneX * .7 + b.x * .3;
+        ty = zoneY * .7 + b.y * .3;
+      }
+      tx = Utils.clamp(tx, f.x + f.w * .40, f.x + f.w - 35);
+      ty = Utils.clamp(ty, f.y + 25, f.y + f.h - 25);
+      moveToward(o, tx, ty, o.s, dt);
+    }
+  },
+
+  updateSupportTeammates(dt) {
+    const f = State.field, cy = f.y + f.h / 2, b = State.ball;
+    const tm = State.teammates;
+    for (let i = 0; i < tm.length; i++) {
+      if (i === State.controlled) continue;
+      const t = tm[i];
+      const tx = Utils.clamp(b.x - 90, f.x + 30, f.x + f.w - 30);
+      const ty = Utils.clamp(cy + t.offset * .85 + (b.y - cy) * .3, f.y + 30, f.y + f.h - 30);
+      moveToward(t, tx, ty, CONFIG.supportSpeed, dt);
+    }
+  }
+};
+
+/* ---------------------------------------------------------------
+   11. MATCH LOGIC — posesión, cambio automático de jugador
+   controlado, robo de balón, arquero, y detección de gol.
+   --------------------------------------------------------------- */
+const MatchLogic = {
+  updatePossessionAndControl(dt) {
+    const b = State.ball, tm = State.teammates;
+    State.possessionProtect = Math.max(0, State.possessionProtect - dt);
+
+    if (!b.owner) {
+      for (let i = 0; i < tm.length; i++) {
+        if (Utils.dist(b.x, b.y, tm[i].x, tm[i].y) < CONFIG.pickupRadius) {
+          b.owner = 'player'; b.holder = i; b.vx = 0; b.vy = 0;
+          State.possessionProtect = CONFIG.possessionGraceSec;
+          break;
+        }
+      }
+    }
+
+    if (b.owner === 'player') {
+      State.controlled = b.holder;
+    } else {
+      // Cambio automático con histéresis: solo cambia si el nuevo
+      // candidato está claramente más cerca (evita parpadeo de control).
+      let best = State.controlled;
+      let bestD = Utils.dist(b.x, b.y, tm[best].x, tm[best].y);
+      for (let i = 0; i < tm.length; i++) {
+        if (i === best) continue;
+        const d = Utils.dist(b.x, b.y, tm[i].x, tm[i].y);
+        if (d < bestD - 15) { best = i; bestD = d; }
+      }
+      State.controlled = best;
+    }
+  },
+
+  updateControlledMovement(dt) {
+    const move = Input.getMoveVector();
+    const cp = State.teammates[State.controlled];
+    const f = State.field;
+    cp.x = Utils.clamp(cp.x + move.x * CONFIG.playerSpeed * dt, f.x + cp.r, f.x + f.w - cp.r);
+    cp.y = Utils.clamp(cp.y + move.y * CONFIG.playerSpeed * dt, f.y + cp.r, f.y + f.h - cp.r);
+    if (move.mag > 0.08) cp.bob += dt * 16;
+    if (State.ball.owner === 'player') { State.ball.x = cp.x + cp.r * 1.5; State.ball.y = cp.y; }
+  },
+
+  checkSteal() {
+    if (State.possessionProtect > 0) return;
+    const b = State.ball;
+    if (b.owner !== 'player') return;
+    const cp = State.teammates[State.controlled];
+    const opp = State.opponents;
+    for (let i = 0; i < opp.length; i++) {
+      const o = opp[i];
+      if (Utils.dist(o.x, o.y, cp.x, cp.y) < CONFIG.stealRadius) {
+        b.owner = 'rival'; b.holder = -1;
+        b.x = o.x - o.r * 1.2; b.y = o.y;
+        return;
+      }
+    }
+  },
+
+  updateRivalPossession(dt) {
+    const b = State.ball;
+    if (b.owner !== 'rival') return;
+    const f = State.field, cy = f.y + f.h / 2;
+    const o = State.opponents[0];
+    b.x = o.x - o.r * 1.2; b.y = o.y;
+    if (o.x < f.x + f.w * .48) {
+      b.owner = null; b.vx = -300; b.vy = (cy - o.y) * 1.2;
+    } else if (Math.random() < dt * 0.7 * State.difficulty) {
+      b.owner = null; b.vx = -360; b.vy = (cy - o.y) * 1.2;
+    }
+  },
+
+  updateKeeper(dt) {
+    const k = State.keeper, b = State.ball, f = State.field;
+    k.y += Utils.clamp(b.y - k.y, -150 * dt, 150 * dt);
+    k.y = Utils.clamp(k.y, f.y + k.r * 2.5, f.y + f.h - k.r * 2.5);
+    if (b.vx > 0 && Utils.dist(b.x, b.y, k.x, k.y) < CONFIG.stealRadius) {
+      b.vx = -Math.abs(b.vx) * 0.75;
+      b.vy += (b.y - k.y) * 3;
+    }
+  },
+
+  checkGoal() {
+    const b = State.ball, f = State.field, cy = f.y + f.h / 2;
+    if (b.x > f.x + f.w - 30 && Math.abs(b.y - cy) < f.h * .13) { Match.scoreGoal('home'); return true; }
+    if (b.x < f.x + 30 && Math.abs(b.y - cy) < f.h * .13) { Match.scoreGoal('away'); return true; }
+    return false;
+  },
+
+  updateClock(dt) {
+    State.timeLeft -= dt;
+    hudTime.textContent = Math.max(0, Math.ceil(State.timeLeft));
+    if (State.timeLeft <= 0) Match.finish();
+  }
+};
+
+/* ---------------------------------------------------------------
+   12. RENDER — un solo lugar donde se dibuja. Se minimizan los
+   cambios de estado del canvas (fillStyle/strokeStyle) agrupando
+   trazos similares, y no se crean objetos nuevos por cuadro.
+   --------------------------------------------------------------- */
+const Render = {
+  circle(x, y, r, fill, stroke) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fill; ctx.fill();
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+  },
+
+  player(p, fill, highlighted, label) {
+    const squash = 1 + Math.sin(p.bob) * 0.14;
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y + p.r * .75, p.r * .85, p.r * .32, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fill();
+    if (highlighted) this.circle(p.x, p.y, p.r + 5, 'rgba(241,196,15,0)', '#f1c40f');
+    ctx.save();
+    ctx.translate(p.x, p.y); ctx.scale(1, squash); ctx.translate(-p.x, -p.y);
+    this.circle(p.x, p.y, p.r, fill, '#fff');
+    ctx.restore();
+    this.circle(p.x, p.y - p.r * .25, p.r * .44, '#f5d6b3', null);
+    if (label != null) {
+      ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.max(10, p.r * .7)}px Arial`;
+      ctx.textAlign = 'center'; ctx.fillText(String(label), p.x, p.y + p.r * .25);
+    }
+  },
+
+  frame() {
+    const f = State.field, cy = f.y + f.h / 2;
+    ctx.fillStyle = CONFIG.colors.grassDark; ctx.fillRect(0, 0, State.W, State.H);
+    ctx.fillStyle = CONFIG.colors.grassLight; ctx.fillRect(f.x, f.y, f.w, f.h);
+    for (let i = 0; i < 10; i++) {
+      ctx.fillStyle = i % 2 ? 'rgba(255,255,255,.025)' : 'rgba(0,0,0,.025)';
+      ctx.fillRect(f.x + i * f.w / 10, f.y, f.w / 10, f.h);
+    }
+    ctx.strokeStyle = CONFIG.colors.line; ctx.lineWidth = 3;
+    ctx.strokeRect(f.x, f.y, f.w, f.h);
+    ctx.beginPath(); ctx.moveTo(f.x + f.w / 2, f.y); ctx.lineTo(f.x + f.w / 2, f.y + f.h); ctx.stroke();
+    ctx.beginPath(); ctx.arc(f.x + f.w / 2, cy, f.h * .13, 0, Math.PI * 2); ctx.stroke();
+
+    const boxH = f.h * .42, boxW = f.w * .14;
+    ctx.strokeRect(f.x, cy - boxH / 2, boxW, boxH);
+    ctx.strokeRect(f.x + f.w - boxW, cy - boxH / 2, boxW, boxH);
+    ctx.strokeRect(f.x, cy - boxH * .25, boxW * .42, boxH * .5);
+    ctx.strokeRect(f.x + f.w - boxW * .42, cy - boxH * .25, boxW * .42, boxH * .5);
+
+    ctx.fillStyle = '#eee';
+    ctx.fillRect(f.x - 12, cy - f.h * .12, 12, f.h * .24);
+    ctx.fillRect(f.x + f.w, cy - f.h * .12, 12, f.h * .24);
+
+    const tm = State.teammates, opp = State.opponents, b = State.ball;
+    for (let i = 0; i < tm.length; i++) this.player(tm[i], CONFIG.colors.team, i === State.controlled, tm[i].num);
+    for (let i = 0; i < opp.length; i++) this.player(opp[i], CONFIG.colors.rival, false, null);
+    this.player(State.keeper, CONFIG.colors.keeper, false, null);
+
+    this.circle(b.x, b.y, b.r, CONFIG.colors.ball, CONFIG.colors.ballEdge);
+    ctx.strokeStyle = CONFIG.colors.ballEdge; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r * .35, 0, Math.PI * 2); ctx.stroke();
+  }
+};
+
+/* ---------------------------------------------------------------
+   13. ENGINE — bucle principal, resize responsive, pausa al
+   perder el foco (evita saltos de dt gigantes al volver), y
+   orientationchange (iOS a veces tarda en disparar 'resize').
+   --------------------------------------------------------------- */
+const Engine = {
+  rafId: null,
+
+  resize() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = innerWidth * dpr;
+    canvas.height = innerHeight * dpr;
+    canvas.style.width = innerWidth + 'px';
+    canvas.style.height = innerHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    State.W = innerWidth; State.H = innerHeight;
+
+    // El campo SIEMPRE mantiene proporción de cancha (ancho > alto),
+    // sin importar si el teléfono está vertical u horizontal.
+    let fw = State.W * CONFIG.fieldMaxWFrac;
+    let fh = fw / CONFIG.fieldAspect;
+    if (fh > State.H * CONFIG.fieldMaxHFrac) {
+      fh = State.H * CONFIG.fieldMaxHFrac;
+      fw = fh * CONFIG.fieldAspect;
+    }
+    State.field = { x: (State.W - fw) / 2, y: (State.H - fh) / 2, w: fw, h: fh };
+
+    // Si ya hay un partido en curso, reescalar radios de las
+    // entidades existentes para que no queden desproporcionadas.
+    if (State.teammates) {
+      const pr = State.field.w * CONFIG.playerRFrac;
+      State.teammates.forEach(t => t.r = pr);
+      State.opponents.forEach(o => o.r = pr);
+      State.keeper.r = State.field.w * CONFIG.keeperRFrac;
+      State.ball.r = State.field.w * CONFIG.ballRFrac;
+    }
+  },
+
+  loop(now) {
+    if (!State.running) return;
+    let dt = (now - State.lastTs) / 1000;
+    State.lastTs = now;
+    dt = Math.min(dt, 0.035); // evita saltos si el navegador pausó un frame
+
+    Engine.update(dt);
+    Render.frame();
+    Engine.rafId = requestAnimationFrame(Engine.loop);
+  },
+
+  update(dt) {
+    Physics.updateBall(dt);
+    MatchLogic.updatePossessionAndControl(dt);
+    MatchLogic.updateControlledMovement(dt);
+    AI.updateSupportTeammates(dt);
+    AI.updateOpponents(dt);
+    Physics.resolveBallCollisions();
+    Physics.separateEntities();
+    MatchLogic.checkSteal();
+    MatchLogic.updateRivalPossession(dt);
+    MatchLogic.updateKeeper(dt);
+    if (MatchLogic.checkGoal()) return;
+    MatchLogic.updateClock(dt);
+  },
+
+  handleVisibility() {
+    if (document.hidden) {
+      // Al pausar no tocamos State.running: el marcador/tiempo quedan
+      // congelados y el bucle simplemente no vuelve a llamarse hasta
+      // que la pestaña regrese (rAF se detiene solo en background).
+    } else if (State.running) {
+      // Al volver, se resetea el reloj de referencia para no saltar
+      // un dt gigante que teletransporte a todos los jugadores.
+      State.lastTs = performance.now();
+    }
+  }
+};
+
+/* ---------------------------------------------------------------
+   14. UI — pantallas de inicio/fin y selector de dificultad.
+   --------------------------------------------------------------- */
+function initUI() {
+  document.querySelectorAll('.diffBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.diffBtn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      State.difficulty = parseFloat(btn.dataset.d);
+    });
+  });
+  document.getElementById('startBtn').addEventListener('click', Match.start);
+  document.getElementById('again').addEventListener('click', Match.start);
 }
-function separate(list){
- for(let iter=0;iter<3;iter++){
-   for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){
-     const a=list[i],b=list[j];
-     let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
-     const minD=a.r+b.r+14;
-     if(d<minD){
-       if(d<0.01){dx=(Math.random()-.5);dy=(Math.random()-.5);d=Math.hypot(dx,dy)||1}
-       const push=(minD-d)/2,ux=dx/d,uy=dy/d;
-       a.x-=ux*push;a.y-=uy*push;b.x+=ux*push;b.y+=uy*push;
-     }
-   }
- }
- list.forEach(p=>{p.x=clamp(p.x,field.x+p.r,field.x+field.w-p.r);p.y=clamp(p.y,field.y+p.r,field.y+field.h-p.r)});
+
+/* ---------------------------------------------------------------
+   15. BOOT
+   --------------------------------------------------------------- */
+function boot() {
+  Engine.resize();
+  Input.init();
+  initUI();
+  window.addEventListener('resize', Engine.resize);
+  window.addEventListener('orientationchange', () => setTimeout(Engine.resize, 60));
+  document.addEventListener('visibilitychange', Engine.handleVisibility);
+
+  // Dibuja un cuadro estático inicial (cancha vacía) detrás del panel de inicio
+  Match.reset();
+  Render.frame();
 }
-function moveEntity(e,tx,ty,spd,dt){
- const dx=tx-e.x,dy=ty-e.y,d=Math.hypot(dx,dy)||1;
- const before=d;
- e.x+=dx/d*Math.min(spd*dt,d);e.y+=dy/d*Math.min(spd*dt,d);
- const moved=Math.hypot(dx/d*Math.min(spd*dt,d),dy/d*Math.min(spd*dt,d));
- e.bob=(e.bob||0)+ (moved>0.3? dt*16 : 0);
-}
-function update(dt){
- const cy=field.y+field.h/2;
- protect=Math.max(0,protect-dt);
- if(ball.owner!=='player'){
-   ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;ball.vx*=Math.pow(.55,dt);ball.vy*=Math.pow(.55,dt);
-   if(ball.y<field.y+10||ball.y>field.y+field.h-10)ball.vy*=-.65;
-   if(ball.x<field.x+10)ball.vx*=-.65;
- }
- if(!ball.owner){
-   for(let i=0;i<teammates.length;i++){
-     if(dist(ball,teammates[i])<32){ball.owner='player';ball.holder=i;ball.vx=ball.vy=0;protect=.4;break}
-   }
- }
- if(ball.owner==='player'){
-   controlled=ball.holder;
- } else {
-   let best=controlled,bestD=dist(ball,teammates[controlled]);
-   teammates.forEach((t,i)=>{
-     if(i===controlled)return;
-     const d=dist(ball,t);
-     if(d<bestD-15){best=i;bestD=d}
-   });
-   controlled=best;
- }
- let ax=joy.x,ay=joy.y;
- if(keys['arrowleft']||keys['a'])ax=-1;if(keys['arrowright']||keys['d'])ax=1;
- if(keys['arrowup']||keys['w'])ay=-1;if(keys['arrowdown']||keys['s'])ay=1;
- const mag=Math.hypot(ax,ay);if(mag>1){ax/=mag;ay/=mag}
- const speed=230;
- const cp=teammates[controlled];
- const px=clamp(cp.x+ax*speed*dt,field.x+22,field.x+field.w-22);
- const py=clamp(cp.y+ay*speed*dt,field.y+22,field.y+field.h-22);
- if(mag>0.1)cp.bob=(cp.bob||0)+dt*16;
- cp.x=px;cp.y=py;
- if(ball.owner==='player'){ball.x=cp.x+24;ball.y=cp.y}
- teammates.forEach((t,i)=>{
-   if(i===controlled)return;
-   const tx=clamp(ball.x-90,field.x+30,field.x+field.w-30);
-   const ty=clamp(cy+t.offset*.85+(ball.y-cy)*.3,field.y+30,field.y+field.h-30);
-   moveEntity(t,tx,ty,120,dt);
- });
- opponents.forEach((o,i)=>{
-   const zoneX=clamp(field.x+field.w*o.zoneXFrac+(ball.x-(field.x+field.w*.5))*.2,field.x+field.w*.42,field.x+field.w-35);
-   const zoneY=clamp(cy+o.zoneY+(ball.y-cy)*.35,field.y+25,field.y+field.h-25);
-   let tx,ty;
-   if(i===0){
-     if(ball.owner==='player'){tx=cp.x;ty=cp.y} else {tx=ball.x;ty=ball.y}
-   } else {
-     tx=zoneX*.7+ball.x*.3;ty=zoneY*.7+ball.y*.3;
-   }
-   moveEntity(o,clamp(tx,field.x+field.w*.40,field.x+field.w-35),clamp(ty,field.y+25,field.y+field.h-25),o.s,dt);
- });
- separate([...teammates,...opponents,keeper]);
- opponents.forEach(o=>{
-   if(protect<=0&&ball.owner==='player'&&dist(o,cp)<30){
-     ball.owner='rival';ball.holder=-1;ball.x=o.x-20;ball.y=o.y;
-   }
- });
- if(ball.owner==='rival'){
-   const o=opponents[0];ball.x=o.x-20;ball.y=o.y;
-   if(o.x<field.x+field.w*.48){ball.owner=null;ball.vx=-300;ball.vy=(cy-o.y)*1.2}
-   else if(Math.random()<dt*.7*difficulty){ball.owner=null;ball.vx=-360;ball.vy=(cy-o.y)*1.2}
- }
- keeper.y+=clamp(ball.y-keeper.y,-150*dt,150*dt);
- keeper.y=clamp(keeper.y,field.y+55,field.y+field.h-55);
- if(ball.x>field.x+field.w-30 && Math.abs(ball.y-cy)<field.h*.13){scoreGoal('home');return}
- if(ball.x<field.x+30 && Math.abs(ball.y-cy)<field.h*.13){scoreGoal('away');return}
- if(ball.vx>0 && dist(ball,keeper)<30){ball.vx=-Math.abs(ball.vx)*.75;ball.vy+=(ball.y-keeper.y)*3}
- timeLeft-=dt;timeEl.textContent=Math.max(0,Math.ceil(timeLeft));
- if(timeLeft<=0)finish();
-}
-function circle(x,y,r,fill,stroke){
- ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();
- if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke()}
-}
-function drawPlayer(p,fill,ringColor,label){
- const squash=1+Math.sin(p.bob||0)*.14;
- ctx.beginPath();ctx.ellipse(p.x,p.y+p.r*.75,p.r*.85,p.r*.32,0,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,.28)';ctx.fill();
- if(ringColor){circle(p.x,p.y,p.r+5,'rgba(241,196,15,0)','#f1c40f')}
- ctx.save();ctx.translate(p.x,p.y);ctx.scale(1,squash);ctx.translate(-p.x,-p.y);
- circle(p.x,p.y,p.r,fill,'#fff');
- ctx.restore();
- circle(p.x,p.y-4,7,'#f5d6b3');
- if(label!=null){ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText(String(label),p.x,p.y+4)}
-}
-function draw(){
- ctx.clearRect(0,0,W,H);
- ctx.fillStyle='#155d2b';ctx.fillRect(0,0,W,H);
- ctx.fillStyle='#247b39';ctx.fillRect(field.x,field.y,field.w,field.h);
- for(let i=0;i<10;i++){ctx.fillStyle=i%2?'rgba(255,255,255,.025)':'rgba(0,0,0,.025)';ctx.fillRect(field.x+i*field.w/10,field.y,field.w/10,field.h)}
- ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=3;ctx.strokeRect(field.x,field.y,field.w,field.h);
- ctx.beginPath();ctx.moveTo(field.x+field.w/2,field.y);ctx.lineTo(field.x+field.w/2,field.y+field.h);ctx.stroke();
- ctx.beginPath();ctx.arc(field.x+field.w/2,field.y+field.h/2,field.h*.13,0,Math.PI*2);ctx.stroke();
- const cy=field.y+field.h/2, boxH=field.h*.42,boxW=field.w*.14;
- ctx.strokeRect(field.x,cy-boxH/2,boxW,boxH);ctx.strokeRect(field.x+field.w-boxW,cy-boxH/2,boxW,boxH);
- ctx.strokeRect(field.x,cy-boxH*.25,boxW*.42,boxH*.5);ctx.strokeRect(field.x+field.w-boxW*.42,cy-boxH*.25,boxW*.42,boxH*.5);
- ctx.fillStyle='#eee';ctx.fillRect(field.x-12,cy-field.h*.12,12,field.h*.24);ctx.fillRect(field.x+field.w,cy-field.h*.12,12,field.h*.24);
- teammates.forEach((t,i)=>drawPlayer(t,'#e74c3c',i===controlled,t.num));
- opponents.forEach(o=>drawPlayer(o,'#2980db',false,null));
- drawPlayer(keeper,'#f1c40f',false,null);
- circle(ball.x,ball.y,ball.r,'#fff','#222');ctx.strokeStyle='#222';ctx.lineWidth=1;ctx.beginPath();ctx.arc(ball.x,ball.y,3,0,Math.PI*2);ctx.stroke();
-}
-function loop(now){
- if(!running)return;let dt=Math.min((now-last)/1000,.035);last=now;update(dt);draw();raf=requestAnimationFrame(loop)
-}
-reset();draw();
+boot();
 </script>
 </body>
 </html>
